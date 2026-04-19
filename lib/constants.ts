@@ -1,0 +1,26 @@
+export const BLOCKED_FILE_EXTENSIONS = new Set([
+  "bat",
+  "cmd",
+  "com",
+  "cpl",
+  "dll",
+  "exe",
+  "hta",
+  "jar",
+  "js",
+  "jse",
+  "lnk",
+  "msi",
+  "msp",
+  "pif",
+  "ps1",
+  "reg",
+  "scr",
+  "sh",
+  "sys",
+  "vb",
+  "vbe",
+  "wsf",
+]);
+
+export const ADMIN_ROLES = new Set(["admin", "super_admin"]);

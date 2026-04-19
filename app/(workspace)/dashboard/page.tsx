@@ -1,12 +1,7 @@
 import type { Metadata } from "next";
-import { Activity, Link2, ShieldCheck, Trash2, Upload } from "lucide-react";
-import {
-  activityFeed,
-  deletedItems,
-  fileRows,
-  shareLinks,
-  summaryStats,
-} from "@/lib/mock-data";
+import { Link2, ShieldCheck, Trash2, Upload } from "lucide-react";
+import { requireSession } from "@/lib/auth/session";
+import { getDashboardData } from "@/lib/drive";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -14,7 +9,33 @@ export const metadata: Metadata = {
 
 const statIcons = [Upload, Link2, Trash2, ShieldCheck];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const session = await requireSession();
+  const data = await getDashboardData(session.user.id, session.user.role);
+
+  const summaryStats = [
+    {
+      label: "Pending uploads",
+      value: String(data.summary.pendingUploads),
+      detail: "Waiting for browser completion or verification",
+    },
+    {
+      label: "Active links",
+      value: String(data.summary.activeLinks),
+      detail: "Non-revoked share links",
+    },
+    {
+      label: "Deleted files",
+      value: String(data.summary.deletedFiles),
+      detail: "Recoverable through deleted items",
+    },
+    {
+      label: "Workspace-visible files",
+      value: String(data.summary.workspaceFiles),
+      detail: "Accessible to authenticated users",
+    },
+  ];
+
   return (
     <main className="space-y-6">
       <section className="overflow-hidden rounded-[2rem] border border-ink-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.88),rgba(247,243,236,0.72))] p-8 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)] backdrop-blur">
@@ -24,16 +45,15 @@ export default function DashboardPage() {
               Workspace overview
             </p>
             <h1 className="text-4xl font-semibold tracking-[-0.05em] text-ink-950">
-              Storage, sharing, and recovery in one operating surface.
+              Welcome back, {session.user.name}.
             </h1>
             <p className="max-w-2xl text-base leading-8 text-ink-700">
-              This shell is tuned for the file-system flows in the product spec:
-              upload state, controlled link sharing, deleted-item recovery, and
-              admin visibility.
+              This workspace is now backed by Neon, Better Auth, and signed
+              Backblaze uploads. The current session role is `{session.user.role}`.
             </p>
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-700/20 bg-emerald-700/8 px-4 py-2 text-sm font-medium text-emerald-800">
-            <Activity className="h-4 w-4" />
+            <ShieldCheck className="h-4 w-4" />
             Health endpoint available at `/api/health`
           </div>
         </div>
@@ -61,98 +81,48 @@ export default function DashboardPage() {
         })}
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-        <article className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
-          <div className="mb-5 flex items-end justify-between gap-4">
-            <div>
-              <p className="text-sm uppercase tracking-[0.24em] text-ink-500">
-                Recent files
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-ink-950">
-                Files visible to the current user
-              </h2>
-            </div>
-            <p className="text-sm text-ink-500">Sorted by modified date</p>
+      <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
+        <div className="mb-5 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-sm uppercase tracking-[0.24em] text-ink-500">
+              Latest uploads
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-ink-950">
+              Freshly verified files
+            </h2>
           </div>
+          <p className="text-sm text-ink-500">Newest first</p>
+        </div>
+
+        {data.recentUploads.length === 0 ? (
+          <p className="text-sm leading-7 text-ink-600">
+            No ready files yet. Head to the Files page to create a folder and
+            upload the first document.
+          </p>
+        ) : (
           <div className="overflow-hidden rounded-[1.5rem] border border-ink-200/80">
-            <div className="grid grid-cols-[minmax(0,1.4fr)_0.8fr_0.8fr_0.8fr] gap-4 bg-ink-950 px-5 py-3 text-xs uppercase tracking-[0.18em] text-white/70">
+            <div className="grid grid-cols-[minmax(0,1.4fr)_0.8fr_0.7fr] gap-4 bg-ink-950 px-5 py-3 text-xs uppercase tracking-[0.18em] text-white/70">
               <span>Name</span>
               <span>Owner</span>
-              <span>Visibility</span>
               <span>Modified</span>
             </div>
-            {fileRows.map((file) => (
+            {data.recentUploads.map((file) => (
               <div
-                key={file.name}
-                className="grid grid-cols-[minmax(0,1.4fr)_0.8fr_0.8fr_0.8fr] gap-4 border-t border-ink-200/80 bg-white px-5 py-4 text-sm text-ink-700"
+                key={file.id}
+                className="grid grid-cols-[minmax(0,1.4fr)_0.8fr_0.7fr] gap-4 border-t border-ink-200/80 bg-white px-5 py-4 text-sm text-ink-700"
               >
                 <div className="min-w-0">
                   <p className="truncate font-medium text-ink-950">{file.name}</p>
                   <p className="mt-1 text-xs text-ink-500">
-                    {file.type} • {file.size}
+                    {file.mimeType} • {Number(file.sizeBytes).toLocaleString()} bytes
                   </p>
                 </div>
-                <span>{file.owner}</span>
-                <span>{file.visibility}</span>
-                <span>{file.modified}</span>
+                <span>{file.ownerName ?? "Unknown"}</span>
+                <span>{new Date(file.updatedAt).toLocaleString()}</span>
               </div>
             ))}
           </div>
-        </article>
-
-        <div className="grid gap-6">
-          <article className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
-            <p className="text-sm uppercase tracking-[0.24em] text-ink-500">
-              Active links
-            </p>
-            <div className="mt-4 space-y-4">
-              {shareLinks.map((link) => (
-                <div key={link.name} className="border-t border-ink-200/80 pt-4 first:border-none first:pt-0">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="font-medium text-ink-950">{link.name}</p>
-                      <p className="text-sm text-ink-600">{link.mode}</p>
-                    </div>
-                    <span className="rounded-full bg-emerald-700/10 px-3 py-1 text-xs font-medium text-emerald-800">
-                      {link.expires}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </article>
-
-          <article className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
-            <p className="text-sm uppercase tracking-[0.24em] text-ink-500">
-              Recovery queue
-            </p>
-            <div className="mt-4 space-y-4">
-              {deletedItems.map((item) => (
-                <div key={item.name} className="border-t border-ink-200/80 pt-4 first:border-none first:pt-0">
-                  <p className="font-medium text-ink-950">{item.name}</p>
-                  <p className="text-sm text-ink-600">
-                    Deleted {item.deletedAt} • Restorable for {item.remaining}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section className="rounded-[2rem] border border-ink-200/80 bg-white/78 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
-        <p className="text-sm uppercase tracking-[0.24em] text-ink-500">
-          Audit activity
-        </p>
-        <div className="mt-5 grid gap-4 md:grid-cols-3">
-          {activityFeed.map((event) => (
-            <article key={event.title} className="border-t border-ink-200/80 pt-4">
-              <p className="font-medium text-ink-950">{event.title}</p>
-              <p className="mt-2 text-sm leading-7 text-ink-600">{event.detail}</p>
-              <p className="mt-3 font-mono text-xs text-ink-500">{event.when}</p>
-            </article>
-          ))}
-        </div>
+        )}
       </section>
     </main>
   );

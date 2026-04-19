@@ -1,0 +1,75 @@
+import "server-only";
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError, createAuthMiddleware } from "better-auth/api";
+import { count } from "drizzle-orm";
+import { db } from "@/lib/db/client";
+import * as schema from "@/lib/db/schema";
+import { env } from "@/lib/env";
+
+export const auth = betterAuth({
+  baseURL: env.appBaseUrl,
+  secret: env.betterAuthSecret,
+  database: drizzleAdapter(db, {
+    provider: "pg",
+    schema,
+    usePlural: true,
+  }),
+  trustedOrigins: [env.appBaseUrl],
+  emailAndPassword: {
+    enabled: true,
+    autoSignIn: true,
+    minPasswordLength: 10,
+    maxPasswordLength: 128,
+  },
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        input: false,
+      },
+      isActive: {
+        type: "boolean",
+        input: false,
+      },
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          const [{ value: userCount }] = await db
+            .select({ value: count() })
+            .from(schema.users);
+
+          return {
+            data: {
+              ...user,
+              role: userCount === 0 ? "super_admin" : "member",
+              isActive: true,
+            },
+          };
+        },
+      },
+    },
+  },
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (
+        ctx.path !== "/sign-up/email" ||
+        !env.internalEmailDomain ||
+        typeof ctx.body?.email !== "string"
+      ) {
+        return;
+      }
+
+      const email = ctx.body.email.toLowerCase();
+
+      if (!email.endsWith(`@${env.internalEmailDomain}`)) {
+        throw new APIError("FORBIDDEN", {
+          message: `Only @${env.internalEmailDomain} email addresses can sign up.`,
+        });
+      }
+    }),
+  },
+});

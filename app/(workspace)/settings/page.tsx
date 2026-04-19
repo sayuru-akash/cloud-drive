@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { env, readiness } from "@/lib/env";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -7,18 +8,15 @@ export const metadata: Metadata = {
 const settingsRows = [
   {
     title: "Upload limits",
-    detail:
-      "Use env-backed defaults for file size limits while keeping room for admin-managed policy later.",
+    detail: `${env.maxUploadSizeBytes.toLocaleString()} bytes max upload size.`,
   },
   {
     title: "Retention policy",
-    detail:
-      "The starter exposes a 30-day soft-delete assumption that can be overridden per environment.",
+    detail: `${env.defaultSoftDeleteRetentionDays} day default soft-delete retention.`,
   },
   {
-    title: "Monitoring",
-    detail:
-      "Add Sentry once DSN values are present so route failures and upload issues are visible early.",
+    title: "Storage bucket",
+    detail: env.b2BucketName,
   },
 ];
 
@@ -30,11 +28,11 @@ export default function SettingsPage() {
           Settings
         </p>
         <h1 className="mt-3 text-4xl font-semibold tracking-[-0.05em] text-ink-950">
-          Configuration surfaces that map cleanly to environment and policy.
+          Runtime configuration and readiness.
         </h1>
         <p className="mt-3 max-w-2xl text-base leading-8 text-ink-700">
-          This route is ready for tenant-safe defaults, upload guardrails,
-          retention changes, and eventual admin controls.
+          Email remains optional for now. Auth, database, and storage are the
+          critical paths for the current release.
         </p>
       </section>
 
@@ -48,6 +46,24 @@ export default function SettingsPage() {
             <p className="mt-3 text-sm leading-7 text-ink-600">{item.detail}</p>
           </article>
         ))}
+      </section>
+
+      <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
+        <p className="text-sm uppercase tracking-[0.24em] text-ink-500">
+          Readiness
+        </p>
+        <div className="mt-5 grid gap-4 md:grid-cols-4">
+          {Object.entries(readiness).map(([key, value]) => (
+            <article key={key} className="rounded-[1.5rem] border border-ink-200/80 bg-surface-strong p-4">
+              <p className="text-sm font-medium capitalize text-ink-950">
+                {key.replace(/([A-Z])/g, " $1")}
+              </p>
+              <p className={`mt-3 text-sm ${value ? "text-emerald-700" : "text-amber-700"}`}>
+                {value ? "Configured" : "Pending"}
+              </p>
+            </article>
+          ))}
+        </div>
       </section>
     </main>
   );

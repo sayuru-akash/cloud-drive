@@ -12,6 +12,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
+import { SignOutButton } from "@/components/sign-out-button";
+import { authClient } from "@/lib/auth-client";
 
 const items: ReadonlyArray<{
   href: Route;
@@ -28,6 +30,7 @@ const items: ReadonlyArray<{
 
 export function WorkspaceNav() {
   const pathname = usePathname();
+  const { data: session } = authClient.useSession();
 
   return (
     <>
@@ -95,11 +98,26 @@ export function WorkspaceNav() {
           })}
         </div>
 
+        <div className="mt-6 rounded-[1.5rem] border border-ink-200/80 bg-white p-4">
+          <p className="text-sm font-medium text-ink-950">
+            {session?.user?.name ?? "Workspace user"}
+          </p>
+          <p className="mt-1 text-sm text-ink-600">
+            {session?.user?.email ?? "Signed in session"}
+          </p>
+          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-emerald-700">
+            {session?.user?.role ?? "member"}
+          </p>
+          <div className="mt-4">
+            <SignOutButton />
+          </div>
+        </div>
+
         <div className="mt-auto rounded-[1.5rem] border border-ink-200/80 bg-[linear-gradient(180deg,rgba(25,122,104,0.08),rgba(25,122,104,0.02))] p-4">
           <p className="text-sm font-medium text-ink-950">Foundation status</p>
           <p className="mt-2 text-sm leading-7 text-ink-600">
-            Routes, metadata, health checks, env scaffolding, and admin-facing
-            surfaces are ready for integration work.
+            Auth, uploads, and database-backed workspace views are active. Email
+            delivery remains optional until Resend is configured.
           </p>
         </div>
       </aside>
