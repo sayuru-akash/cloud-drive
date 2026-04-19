@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { getAppSettings } from "@/lib/app-settings";
 import { logAuditEvent } from "@/lib/audit";
 import { requireSession } from "@/lib/auth/session";
-import { BLOCKED_FILE_EXTENSIONS } from "@/lib/constants";
 import { db } from "@/lib/db/client";
 import { files, folders, uploads } from "@/lib/db/schema";
-import { canAccessResource } from "@/lib/drive";
-import { env } from "@/lib/env";
+import { canEditResource, ensureUniqueFileName } from "@/lib/drive";
 import { createId } from "@/lib/ids";
 import { buildStorageKey, createUploadUrl } from "@/lib/storage";
 
@@ -20,17 +19,20 @@ const initiateUploadSchema = z.object({
 
 export async function POST(request: Request) {
   const session = await requireSession();
+  const settings = await getAppSettings();
   const body = initiateUploadSchema.parse(await request.json());
 
   const extension = body.fileName.split(".").pop()?.toLowerCase() ?? "";
-  if (BLOCKED_FILE_EXTENSIONS.has(extension)) {
+  const blockedExtensions = new Set(settings.blockedFileExtensions);
+
+  if (blockedExtensions.has(extension)) {
     return NextResponse.json(
       { error: "This file type is blocked by policy." },
       { status: 400 },
     );
   }
 
-  if (body.sizeBytes > env.maxUploadSizeBytes) {
+  if (body.sizeBytes > settings.maxUploadSizeBytes) {
     return NextResponse.json(
       { error: "File exceeds the configured upload limit." },
       { status: 400 },
@@ -53,11 +55,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Target folder not found." }, { status: 404 });
     }
 
-    const canAccess = canAccessResource({
+    const canAccess = canEditResource({
       userId: session.user.id,
       userRole: session.user.role,
       ownerUserId: folder.ownerUserId,
-      visibility: folder.visibility,
     });
 
     if (!canAccess) {
@@ -67,7 +68,8 @@ export async function POST(request: Request) {
 
   const fileId = createId("file");
   const uploadId = createId("upload");
-  const storageKey = buildStorageKey(fileId, 1, body.fileName);
+  const resolvedDisplayName = await ensureUniqueFileName(body.folderId ?? null, body.fileName);
+  const storageKey = buildStorageKey(fileId, 1, resolvedDisplayName);
   const uploadUrl = await createUploadUrl({
     storageKey,
     contentType: body.contentType,
@@ -79,7 +81,7 @@ export async function POST(request: Request) {
     ownerUserId: session.user.id,
     createdByUserId: session.user.id,
     originalName: body.fileName,
-    displayName: body.fileName,
+    displayName: resolvedDisplayName,
     extension,
     mimeType: body.contentType,
     sizeBytes: body.sizeBytes,
@@ -106,7 +108,7 @@ export async function POST(request: Request) {
     resourceId: fileId,
     metadataJson: {
       uploadId,
-      fileName: body.fileName,
+      fileName: resolvedDisplayName,
       sizeBytes: body.sizeBytes,
     },
   });
@@ -115,6 +117,7 @@ export async function POST(request: Request) {
     fileId,
     uploadId,
     uploadUrl,
+    displayName: resolvedDisplayName,
     method: "PUT",
   });
 }

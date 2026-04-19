@@ -1,13 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { and, eq, gt, isNull, or } from "drizzle-orm";
 import { Download, Eye, ShieldAlert } from "lucide-react";
-import { db } from "@/lib/db/client";
-import { files, shareLinks } from "@/lib/db/schema";
-import { getCurrentFileVersion } from "@/lib/drive";
-import { hashValue } from "@/lib/ids";
-import { createDownloadUrl } from "@/lib/storage";
+import { getActivePublicShareByToken } from "@/lib/shares";
 
 export const metadata: Metadata = {
   title: "Shared Resource",
@@ -20,33 +15,9 @@ export default async function PublicSharePage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const tokenHash = hashValue(token);
+  const share = await getActivePublicShareByToken(token);
 
-  const [share] = await db
-    .select({
-      id: shareLinks.id,
-      fileId: shareLinks.resourceId,
-      mode: shareLinks.mode,
-      expiresAt: shareLinks.expiresAt,
-      isRevoked: shareLinks.isRevoked,
-      fileName: files.displayName,
-      mimeType: files.mimeType,
-      isDeleted: files.isDeleted,
-      status: files.status,
-    })
-    .from(shareLinks)
-    .leftJoin(files, eq(shareLinks.resourceId, files.id))
-    .where(
-      and(
-        eq(shareLinks.tokenHash, tokenHash),
-        eq(shareLinks.resourceType, "file"),
-        eq(shareLinks.isRevoked, false),
-        or(isNull(shareLinks.expiresAt), gt(shareLinks.expiresAt, new Date())),
-      ),
-    )
-    .limit(1);
-
-  if (!share || !share.fileId || share.isDeleted || share.status !== "ready") {
+  if (!share) {
     return (
       <main className="flex min-h-screen items-center justify-center px-6 py-16">
         <div className="w-full max-w-xl rounded-[2rem] border border-ink-200/80 bg-white/82 p-8 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)] backdrop-blur">
@@ -62,12 +33,12 @@ export default async function PublicSharePage({
     );
   }
 
-  const version = await getCurrentFileVersion(share.fileId);
-  const downloadUrl = version ? await createDownloadUrl(version.storageKey) : null;
-  const previewable = Boolean(
-    downloadUrl &&
-      (share.mimeType?.startsWith("image/") || share.mimeType === "application/pdf"),
-  );
+  const previewUrl = share.previewable
+    ? `/api/public-share/${token}/preview`
+    : null;
+  const downloadUrl = share.mode === "download"
+    ? `/api/public-share/${token}/download`
+    : null;
 
   return (
     <main className="flex min-h-screen items-center justify-center px-6 py-16">
@@ -79,8 +50,8 @@ export default async function PublicSharePage({
               {share.fileName}
             </h1>
             <p className="text-base leading-8 text-ink-700">
-              This link is validated against a hashed token, revocation state,
-              expiry, and the current file record before access is granted.
+              View-only links are streamed through the app so the browser can
+              preview supported files without exposing a reusable object URL.
             </p>
           </div>
 
@@ -90,8 +61,8 @@ export default async function PublicSharePage({
               Shared-link policy
             </p>
             <p className="mt-2 leading-7">
-              Deleted, expired, or revoked resources should fail closed and
-              never expose permanent storage URLs.
+              Deleted, expired, or revoked resources fail closed. Downloads stay
+              disabled unless the link was created in download mode.
             </p>
           </div>
         </div>
@@ -104,7 +75,7 @@ export default async function PublicSharePage({
             </p>
             <p className="mt-3 text-sm leading-7 text-ink-600">
               {share.mode === "view"
-                ? "This link is currently limited to preview access."
+                ? "Preview is available where the file type supports it, but direct download is disabled."
                 : "Preview access is available alongside downloads."}
             </p>
           </div>
@@ -115,23 +86,23 @@ export default async function PublicSharePage({
             </p>
             <p className="mt-3 text-sm leading-7 text-ink-600">
               {share.mode === "download"
-                ? "This link can issue a short-lived signed download URL."
+                ? "This link can issue a short-lived download redirect after server-side validation."
                 : "Downloads are disabled for this share link."}
             </p>
           </div>
         </div>
 
-        {previewable ? (
+        {previewUrl ? (
           <div className="mt-8 overflow-hidden rounded-[1.5rem] border border-ink-200/80 bg-surface-strong p-3">
             {share.mimeType === "application/pdf" ? (
               <iframe
-                src={downloadUrl ?? undefined}
+                src={previewUrl}
                 className="h-[36rem] w-full rounded-[1rem] bg-white"
                 title={share.fileName ?? "Shared PDF"}
               />
             ) : (
               <img
-                src={downloadUrl ?? undefined}
+                src={previewUrl}
                 alt={share.fileName ?? "Shared file preview"}
                 className="max-h-[36rem] w-full rounded-[1rem] object-contain"
               />
@@ -140,7 +111,7 @@ export default async function PublicSharePage({
         ) : null}
 
         <div className="mt-8 flex gap-3">
-          {downloadUrl && share.mode === "download" ? (
+          {downloadUrl ? (
             <a
               href={downloadUrl}
               className="rounded-full bg-ink-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-ink-800"

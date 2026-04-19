@@ -16,7 +16,7 @@ export default async function WorkspaceLayout({
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto flex w-full max-w-7xl gap-6 px-4 py-4 md:px-6 lg:px-10">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-4 md:px-6 lg:flex-row lg:px-10">
         <WorkspaceNav />
         <div className="min-w-0 flex-1">{children}</div>
       </div>

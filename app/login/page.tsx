@@ -32,6 +32,7 @@ export default async function LoginPage() {
             <p className="text-base leading-8 text-ink-700">
               Email and password authentication is live. The first registered
               account becomes `super_admin`; later accounts default to `member`.
+              Password recovery is available through email.
             </p>
           </div>
           <AuthPanel />

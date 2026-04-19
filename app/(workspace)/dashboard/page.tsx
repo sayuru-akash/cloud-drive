@@ -38,23 +38,23 @@ export default async function DashboardPage() {
 
   return (
     <main className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-ink-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.88),rgba(247,243,236,0.72))] p-8 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)] backdrop-blur">
+      <section className="overflow-hidden rounded-[2rem] border border-ink-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.88),rgba(247,243,236,0.72))] p-6 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)] backdrop-blur md:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-3">
             <p className="text-sm uppercase tracking-[0.24em] text-emerald-700">
               Workspace overview
             </p>
-            <h1 className="text-4xl font-semibold tracking-[-0.05em] text-ink-950">
+            <h1 className="text-3xl font-semibold tracking-[-0.05em] text-ink-950 sm:text-4xl">
               Welcome back, {session.user.name}.
             </h1>
-            <p className="max-w-2xl text-base leading-8 text-ink-700">
+            <p className="max-w-2xl text-sm leading-7 text-ink-700 sm:text-base sm:leading-8">
               This workspace is now backed by Neon, Better Auth, and signed
               Backblaze uploads. The current session role is `{session.user.role}`.
             </p>
           </div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-700/20 bg-emerald-700/8 px-4 py-2 text-sm font-medium text-emerald-800">
+          <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-emerald-700/20 bg-emerald-700/8 px-4 py-2 text-sm font-medium text-emerald-800">
             <ShieldCheck className="h-4 w-4" />
-            Health endpoint available at `/api/health`
+            <span className="truncate">Health endpoint available at `/api/health`</span>
           </div>
         </div>
       </section>
@@ -81,8 +81,8 @@ export default async function DashboardPage() {
         })}
       </section>
 
-      <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
-        <div className="mb-5 flex items-end justify-between gap-4">
+      <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-5 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur sm:p-6">
+        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-ink-500">
               Latest uploads
@@ -100,28 +100,47 @@ export default async function DashboardPage() {
             upload the first document.
           </p>
         ) : (
-          <div className="overflow-hidden rounded-[1.5rem] border border-ink-200/80">
-            <div className="grid grid-cols-[minmax(0,1.4fr)_0.8fr_0.7fr] gap-4 bg-ink-950 px-5 py-3 text-xs uppercase tracking-[0.18em] text-white/70">
-              <span>Name</span>
-              <span>Owner</span>
-              <span>Modified</span>
-            </div>
-            {data.recentUploads.map((file) => (
-              <div
-                key={file.id}
-                className="grid grid-cols-[minmax(0,1.4fr)_0.8fr_0.7fr] gap-4 border-t border-ink-200/80 bg-white px-5 py-4 text-sm text-ink-700"
-              >
-                <div className="min-w-0">
+          <>
+            <div className="space-y-3 md:hidden">
+              {data.recentUploads.map((file) => (
+                <article
+                  key={file.id}
+                  className="rounded-[1.25rem] border border-ink-200/80 bg-white p-4"
+                >
                   <p className="truncate font-medium text-ink-950">{file.name}</p>
                   <p className="mt-1 text-xs text-ink-500">
                     {file.mimeType} • {Number(file.sizeBytes).toLocaleString()} bytes
                   </p>
-                </div>
-                <span>{file.ownerName ?? "Unknown"}</span>
-                <span>{new Date(file.updatedAt).toLocaleString()}</span>
+                  <div className="mt-3 flex flex-col gap-1 text-sm text-ink-600">
+                    <span>{file.ownerName ?? "Unknown"}</span>
+                    <span>{new Date(file.updatedAt).toLocaleString()}</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+            <div className="hidden overflow-hidden rounded-[1.5rem] border border-ink-200/80 md:block">
+              <div className="grid grid-cols-[minmax(0,1.4fr)_0.8fr_0.7fr] gap-4 bg-ink-950 px-5 py-3 text-xs uppercase tracking-[0.18em] text-white/70">
+                <span>Name</span>
+                <span>Owner</span>
+                <span>Modified</span>
               </div>
-            ))}
-          </div>
+              {data.recentUploads.map((file) => (
+                <div
+                  key={file.id}
+                  className="grid grid-cols-[minmax(0,1.4fr)_0.8fr_0.7fr] gap-4 border-t border-ink-200/80 bg-white px-5 py-4 text-sm text-ink-700"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-ink-950">{file.name}</p>
+                    <p className="mt-1 text-xs text-ink-500">
+                      {file.mimeType} • {Number(file.sizeBytes).toLocaleString()} bytes
+                    </p>
+                  </div>
+                  <span>{file.ownerName ?? "Unknown"}</span>
+                  <span>{new Date(file.updatedAt).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </section>
     </main>

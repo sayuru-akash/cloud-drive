@@ -130,6 +130,17 @@ export function AuthPanel() {
               ? "Create account"
               : "Sign in"}
         </button>
+
+        {mode === "sign-in" ? (
+          <div className="flex justify-end">
+            <a
+              href="/forgot-password"
+              className="text-sm font-medium text-emerald-800 transition hover:text-emerald-700"
+            >
+              Forgot password?
+            </a>
+          </div>
+        ) : null}
       </form>
     </div>
   );

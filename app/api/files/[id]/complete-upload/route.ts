@@ -4,7 +4,7 @@ import { logAuditEvent } from "@/lib/audit";
 import { requireSession } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
 import { fileVersions, files, uploads } from "@/lib/db/schema";
-import { canAccessResource, getFileRecord } from "@/lib/drive";
+import { canEditResource, getFileRecord } from "@/lib/drive";
 import { env } from "@/lib/env";
 import { createId } from "@/lib/ids";
 import { getStoredObject } from "@/lib/storage";
@@ -21,11 +21,10 @@ export async function POST(
     return NextResponse.json({ error: "File not found." }, { status: 404 });
   }
 
-  const canAccess = canAccessResource({
+  const canAccess = canEditResource({
     userId: session.user.id,
     userRole: session.user.role,
     ownerUserId: file.ownerUserId,
-    visibility: file.visibility,
   });
 
   if (!canAccess) {
@@ -46,7 +45,32 @@ export async function POST(
     );
   }
 
-  const object = await getStoredObject(upload.storageKey);
+  let object;
+
+  try {
+    object = await getStoredObject(upload.storageKey);
+  } catch {
+    await db
+      .update(uploads)
+      .set({
+        uploadStatus: "failed",
+        updatedAt: new Date(),
+      })
+      .where(eq(uploads.id, upload.id));
+
+    await db
+      .update(files)
+      .set({
+        status: "failed",
+        updatedAt: new Date(),
+      })
+      .where(eq(files.id, file.id));
+
+    return NextResponse.json(
+      { error: "Uploaded object could not be verified." },
+      { status: 400 },
+    );
+  }
   const sizeBytes = Number(object.ContentLength ?? upload.sizeBytes);
   const mimeType = object.ContentType ?? upload.contentType;
   const versionId = createId("ver");

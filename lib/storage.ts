@@ -1,5 +1,11 @@
 import "server-only";
-import { S3Client, GetObjectCommand, HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from "@/lib/env";
 
@@ -58,6 +64,24 @@ export async function createDownloadUrl(storageKey: string) {
 export async function getStoredObject(storageKey: string) {
   return storageClient.send(
     new HeadObjectCommand({
+      Bucket: env.b2BucketName,
+      Key: storageKey,
+    }),
+  );
+}
+
+export async function getStoredObjectStream(storageKey: string) {
+  return storageClient.send(
+    new GetObjectCommand({
+      Bucket: env.b2BucketName,
+      Key: storageKey,
+    }),
+  );
+}
+
+export async function deleteStoredObject(storageKey: string) {
+  return storageClient.send(
+    new DeleteObjectCommand({
       Bucket: env.b2BucketName,
       Key: storageKey,
     }),

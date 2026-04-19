@@ -1,39 +1,60 @@
 # Cloud Drive
 
-A production-grade Next.js 16 foundation for an internal file workspace. This starter is aligned to the product spec in [`cloud-drive-spec.md`](/Users/sayuru/Documents/GitHub/cloud-drive/cloud-drive-spec.md) and is intentionally scoped to the app shell, production defaults, and integration-ready structure.
+An internal file workspace built on Next.js 16, Better Auth, Drizzle, Neon, Backblaze B2, and Resend. Designed for secure file management and sharing within an organization, with features like direct browser uploads, shareable links, and admin controls.
 
 ## Included
 
-- polished marketing landing page and internal workspace routes
-- Next.js metadata, manifest, robots, sitemap, and dynamic OG image
-- hardened `next.config.ts` response headers and typed routes
-- server-only env parsing with a health/readiness endpoint
-- custom `not-found` and global error boundaries
-- `.env.example` committed safely while real `.env*` files remain ignored
+- protected App Router workspace with Better Auth session enforcement
+- Neon + Drizzle schema for files, folders, uploads, share links, audit logs, and settings
+- direct browser-to-B2 uploads with progress, duplicate-name handling, cancel, and retry
+- file and folder rename, move, visibility controls, soft delete, restore, and admin hard delete
+- public share links with expiry, revoke, view-only preview proxying, and download mode
+- email-backed password reset and optional share-link notification through Resend
+- admin policy settings for upload limit, blocked file extensions, retention, and default share expiry
+- sitemap, robots, manifest, OG image, error boundaries, and health/readiness endpoint
 
 ## Routes
 
 - `/`
+- `/login`
+- `/forgot-password`
+- `/reset-password`
 - `/dashboard`
 - `/files`
 - `/shared`
 - `/deleted`
 - `/settings`
 - `/admin`
-- `/login`
+- `/s/[token]`
 - `/api/health`
 
 ## Local setup
 
 1. Install dependencies: `npm install`
 2. Copy `.env.example` to `.env.local`
-3. Run the dev server: `npm run dev`
-4. Validate production build: `npm run lint && npm run build`
+3. Run migrations: `npx drizzle-kit migrate`
+4. Run the dev server: `npm run dev`
+5. Validate production build: `npm run lint && npm run build`
 
-## Planned integration phases
+## Required env
 
-1. Better Auth and protected route enforcement
-2. Neon + Drizzle schema and resource permission model
-3. Backblaze B2 signed upload and download flows
-4. Share-link lifecycle, delete/restore, and audit persistence
-5. Resend and Sentry wiring
+- `DATABASE_URL`
+- `BETTER_AUTH_SECRET`
+- `B2_S3_ENDPOINT`
+- `B2_KEY_ID`
+- `B2_APPLICATION_KEY`
+- `B2_BUCKET_NAME`
+- `NEXT_PUBLIC_APP_URL`
+- `APP_BASE_URL`
+
+## Email env
+
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `INTERNAL_EMAIL_DOMAIN`
+
+## Backblaze notes
+
+- Keep the B2 bucket private.
+- Enable SSE-B2 default encryption.
+- Configure bucket CORS to allow your app origin against the B2 S3 endpoint for browser-direct uploads.

@@ -12,6 +12,7 @@ const serverEnvSchema = z.object({
   B2_APPLICATION_KEY: z.string().min(1, "B2_APPLICATION_KEY is required"),
   B2_BUCKET_NAME: z.string().min(6, "B2_BUCKET_NAME must be at least 6 characters"),
   RESEND_API_KEY: z.string().min(1).optional(),
+  RESEND_FROM_EMAIL: z.string().min(1).optional(),
   MAX_UPLOAD_SIZE_BYTES: z.coerce.number().int().positive().default(262144000),
   DEFAULT_SOFT_DELETE_RETENTION_DAYS: z.coerce.number().int().positive().default(30),
   INTERNAL_EMAIL_DOMAIN: z.string().min(1).optional(),
@@ -30,6 +31,7 @@ const parsedServerEnv = serverEnvSchema.parse({
   B2_APPLICATION_KEY: process.env.B2_APPLICATION_KEY,
   B2_BUCKET_NAME: process.env.B2_BUCKET_NAME,
   RESEND_API_KEY: process.env.RESEND_API_KEY,
+  RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
   MAX_UPLOAD_SIZE_BYTES: process.env.MAX_UPLOAD_SIZE_BYTES,
   DEFAULT_SOFT_DELETE_RETENTION_DAYS:
     process.env.DEFAULT_SOFT_DELETE_RETENTION_DAYS,
@@ -50,6 +52,11 @@ export const env = {
   b2ApplicationKey: parsedServerEnv.B2_APPLICATION_KEY,
   b2BucketName: parsedServerEnv.B2_BUCKET_NAME,
   resendApiKey: parsedServerEnv.RESEND_API_KEY,
+  resendFromEmail:
+    parsedServerEnv.RESEND_FROM_EMAIL ??
+    (parsedServerEnv.INTERNAL_EMAIL_DOMAIN
+      ? `Cloud Drive <noreply@${parsedServerEnv.INTERNAL_EMAIL_DOMAIN.toLowerCase()}>`
+      : undefined),
   maxUploadSizeBytes: parsedServerEnv.MAX_UPLOAD_SIZE_BYTES,
   defaultSoftDeleteRetentionDays:
     parsedServerEnv.DEFAULT_SOFT_DELETE_RETENTION_DAYS,
@@ -66,5 +73,5 @@ export const readiness = {
   storage: Boolean(
     env.b2Endpoint && env.b2KeyId && env.b2ApplicationKey && env.b2BucketName,
   ),
-  email: Boolean(env.resendApiKey),
+  email: Boolean(env.resendApiKey && env.resendFromEmail),
 };

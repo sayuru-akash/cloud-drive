@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { logAuditEvent } from "@/lib/audit";
 import { requireSession } from "@/lib/auth/session";
-import { canAccessResource, getCurrentFileVersion, getFileRecord } from "@/lib/drive";
+import { canViewResource, getCurrentFileVersion, getFileRecord } from "@/lib/drive";
 import { createDownloadUrl } from "@/lib/storage";
 
 export async function GET(
@@ -16,7 +16,7 @@ export async function GET(
     return NextResponse.json({ error: "File unavailable." }, { status: 404 });
   }
 
-  const canAccess = canAccessResource({
+  const canAccess = canViewResource({
     userId: session.user.id,
     userRole: session.user.role,
     ownerUserId: file.ownerUserId,

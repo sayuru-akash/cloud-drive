@@ -116,8 +116,8 @@ export function WorkspaceNav() {
         <div className="mt-auto rounded-[1.5rem] border border-ink-200/80 bg-[linear-gradient(180deg,rgba(25,122,104,0.08),rgba(25,122,104,0.02))] p-4">
           <p className="text-sm font-medium text-ink-950">Foundation status</p>
           <p className="mt-2 text-sm leading-7 text-ink-600">
-            Auth, uploads, and database-backed workspace views are active. Email
-            delivery remains optional until Resend is configured.
+            Auth, uploads, password recovery, and database-backed workspace
+            policy are active.
           </p>
         </div>
       </aside>

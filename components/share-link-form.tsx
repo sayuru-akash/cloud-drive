@@ -7,7 +7,7 @@ type ShareLinkFormProps = {
   fileId: string;
 };
 
-const initialState: { error?: string; success?: boolean; url?: string } = {};
+const initialState: { error?: string; success?: boolean; url?: string; notice?: string } = {};
 
 export function ShareLinkForm({ fileId }: ShareLinkFormProps) {
   const [state, formAction, isPending] = useActionState(
@@ -34,7 +34,7 @@ export function ShareLinkForm({ fileId }: ShareLinkFormProps) {
           name="expiryDays"
           type="number"
           min={1}
-          max={30}
+          max={90}
           defaultValue={7}
           className="w-28 rounded-2xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900"
         />
@@ -46,6 +46,13 @@ export function ShareLinkForm({ fileId }: ShareLinkFormProps) {
           {isPending ? "Creating..." : "Create share link"}
         </button>
       </div>
+
+      <input
+        name="notifyEmail"
+        type="email"
+        placeholder="Optional email notification"
+        className="rounded-2xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900"
+      />
 
       {state.error ? (
         <p className="text-sm text-red-700">{state.error}</p>
@@ -64,6 +71,9 @@ export function ShareLinkForm({ fileId }: ShareLinkFormProps) {
               Copy
             </button>
           </div>
+          {state.notice ? (
+            <p className="mt-2 text-xs text-emerald-800">{state.notice}</p>
+          ) : null}
         </div>
       ) : null}
     </form>

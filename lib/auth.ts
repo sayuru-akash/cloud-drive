@@ -2,9 +2,10 @@ import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
-import { count } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import * as schema from "@/lib/db/schema";
+import { sendPasswordResetEmail } from "@/lib/email";
 import { env } from "@/lib/env";
 
 export const auth = betterAuth({
@@ -21,6 +22,13 @@ export const auth = betterAuth({
     autoSignIn: true,
     minPasswordLength: 10,
     maxPasswordLength: 128,
+    sendResetPassword: async ({ user, url }) => {
+      void sendPasswordResetEmail({
+        to: user.email,
+        name: user.name,
+        resetUrl: url,
+      });
+    },
   },
   user: {
     additionalFields: {
@@ -55,6 +63,25 @@ export const auth = betterAuth({
   },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
+      if (
+        ctx.path === "/sign-in/email" &&
+        typeof ctx.body?.email === "string"
+      ) {
+        const [user] = await db
+          .select({
+            isActive: schema.users.isActive,
+          })
+          .from(schema.users)
+          .where(eq(schema.users.email, ctx.body.email.toLowerCase()))
+          .limit(1);
+
+        if (user?.isActive === false) {
+          throw new APIError("FORBIDDEN", {
+            message: "This account has been disabled.",
+          });
+        }
+      }
+
       if (
         ctx.path !== "/sign-up/email" ||
         !env.internalEmailDomain ||

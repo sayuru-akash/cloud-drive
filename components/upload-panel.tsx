@@ -1,31 +1,54 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type UploadPanelProps = {
   folderId: string | null;
 };
 
 type UploadState = {
-  fileName: string;
+  id: string;
+  file: File;
+  fileId?: string;
+  displayName: string;
   progress: number;
-  status: "idle" | "uploading" | "finalizing" | "done" | "error";
+  status:
+    | "queued"
+    | "uploading"
+    | "finalizing"
+    | "done"
+    | "error"
+    | "cancelled";
   message?: string;
 };
 
 export function UploadPanel({ folderId }: UploadPanelProps) {
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const xhrRef = useRef<Record<string, XMLHttpRequest | undefined>>({});
   const [uploads, setUploads] = useState<UploadState[]>([]);
+  const [isDragActive, setIsDragActive] = useState(false);
 
-  async function startUpload(file: File) {
-    setUploads((current) => [
-      {
-        fileName: file.name,
-        progress: 0,
-        status: "uploading",
-      },
+  function updateUpload(id: string, updater: (current: UploadState) => UploadState) {
+    setUploads((current) =>
+      current.map((item) => (item.id === id ? updater(item) : item)),
+    );
+  }
+
+  async function startUpload(uploadId: string) {
+    const upload = uploads.find((item) => item.id === uploadId);
+
+    if (!upload) {
+      return;
+    }
+
+    updateUpload(uploadId, (current) => ({
       ...current,
-    ]);
+      status: "uploading",
+      progress: 0,
+      message: "Requesting signed upload URL.",
+    }));
 
     try {
       const initRes = await fetch("/api/files/initiate-upload", {
@@ -35,9 +58,9 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
         },
         body: JSON.stringify({
           folderId,
-          fileName: file.name,
-          contentType: file.type || "application/octet-stream",
-          sizeBytes: file.size,
+          fileName: upload.file.name,
+          contentType: upload.file.type || "application/octet-stream",
+          sizeBytes: upload.file.size,
         }),
       });
 
@@ -46,10 +69,24 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
         throw new Error(initJson.error ?? "Upload could not be started.");
       }
 
+      updateUpload(uploadId, (current) => ({
+        ...current,
+        fileId: initJson.fileId,
+        displayName: initJson.displayName ?? current.displayName,
+        message:
+          initJson.displayName && initJson.displayName !== current.file.name
+            ? `Stored as ${initJson.displayName} to avoid a duplicate name.`
+            : "Uploading to Backblaze B2.",
+      }));
+
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
+        xhrRef.current[uploadId] = xhr;
         xhr.open("PUT", initJson.uploadUrl, true);
-        xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+        xhr.setRequestHeader(
+          "Content-Type",
+          upload.file.type || "application/octet-stream",
+        );
 
         xhr.upload.onprogress = (event) => {
           if (!event.lengthComputable) {
@@ -57,16 +94,16 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
           }
 
           const progress = Math.round((event.loaded / event.total) * 100);
-          setUploads((current) =>
-            current.map((item) =>
-              item.fileName === file.name
-                ? { ...item, progress, status: "uploading" }
-                : item,
-            ),
-          );
+          updateUpload(uploadId, (current) => ({
+            ...current,
+            progress,
+            status: "uploading",
+          }));
         };
 
         xhr.onload = () => {
+          delete xhrRef.current[uploadId];
+
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve();
             return;
@@ -75,17 +112,25 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
           reject(new Error(`Upload failed with status ${xhr.status}.`));
         };
 
-        xhr.onerror = () => reject(new Error("Upload failed."));
-        xhr.send(file);
+        xhr.onabort = () => {
+          delete xhrRef.current[uploadId];
+          reject(new Error("Upload cancelled."));
+        };
+
+        xhr.onerror = () => {
+          delete xhrRef.current[uploadId];
+          reject(new Error("Upload failed."));
+        };
+
+        xhr.send(upload.file);
       });
 
-      setUploads((current) =>
-        current.map((item) =>
-          item.fileName === file.name
-            ? { ...item, status: "finalizing", progress: 100 }
-            : item,
-        ),
-      );
+      updateUpload(uploadId, (current) => ({
+        ...current,
+        status: "finalizing",
+        progress: 100,
+        message: "Verifying object and finalizing metadata.",
+      }));
 
       const completeRes = await fetch(`/api/files/${initJson.fileId}/complete-upload`, {
         method: "POST",
@@ -96,29 +141,63 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
         throw new Error(completeJson.error ?? "Upload finalization failed.");
       }
 
-      setUploads((current) =>
-        current.map((item) =>
-          item.fileName === file.name
-            ? { ...item, status: "done", progress: 100, message: "Upload complete." }
-            : item,
-        ),
-      );
+      updateUpload(uploadId, (current) => ({
+        ...current,
+        status: "done",
+        progress: 100,
+        message: "Upload complete.",
+      }));
 
-      window.location.reload();
+      router.refresh();
     } catch (error) {
-      setUploads((current) =>
-        current.map((item) =>
-          item.fileName === file.name
-            ? {
-                ...item,
-                status: "error",
-                message:
-                  error instanceof Error ? error.message : "Unexpected upload error.",
-              }
-            : item,
-        ),
-      );
+      const message =
+        error instanceof Error ? error.message : "Unexpected upload error.";
+
+      updateUpload(uploadId, (current) => ({
+        ...current,
+        status: message === "Upload cancelled." ? "cancelled" : "error",
+        message,
+      }));
     }
+  }
+
+  async function cancelUpload(upload: UploadState) {
+    xhrRef.current[upload.id]?.abort();
+
+    if (upload.fileId) {
+      await fetch(`/api/files/${upload.fileId}/cancel-upload`, {
+        method: "POST",
+      }).catch(() => undefined);
+    }
+
+    updateUpload(upload.id, (current) => ({
+      ...current,
+      status: "cancelled",
+      message: "Upload cancelled.",
+    }));
+
+    router.refresh();
+  }
+
+  function queueFiles(fileList: FileList | File[]) {
+    const selected = Array.from(fileList).filter((file) => file.size > 0);
+
+    if (selected.length === 0) {
+      return;
+    }
+
+    const nextUploads = selected.map<UploadState>((file) => ({
+      id: crypto.randomUUID(),
+      file,
+      displayName: file.name,
+      progress: 0,
+      status: "queued",
+    }));
+
+    setUploads((current) => [...nextUploads, ...current]);
+    nextUploads.forEach((item) => {
+      void Promise.resolve().then(() => startUpload(item.id));
+    });
   }
 
   return (
@@ -137,58 +216,115 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
           onClick={() => fileInputRef.current?.click()}
           className="rounded-full bg-ink-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-ink-800"
         >
-          Select file
+          Select files
         </button>
       </div>
 
       <input
         ref={fileInputRef}
         type="file"
+        multiple
         className="hidden"
         onChange={(event) => {
-          const selected = event.target.files?.[0];
-          if (selected) {
-            void startUpload(selected);
+          if (event.target.files) {
+            queueFiles(event.target.files);
           }
           event.currentTarget.value = "";
         }}
       />
 
+      <div
+        onDragOver={(event) => {
+          event.preventDefault();
+          setIsDragActive(true);
+        }}
+        onDragLeave={() => setIsDragActive(false)}
+        onDrop={(event) => {
+          event.preventDefault();
+          setIsDragActive(false);
+          if (event.dataTransfer.files) {
+            queueFiles(event.dataTransfer.files);
+          }
+        }}
+        className={`mt-6 rounded-[1.5rem] border border-dashed p-5 transition ${
+          isDragActive
+            ? "border-emerald-500 bg-emerald-50"
+            : "border-ink-200 bg-surface-strong"
+        }`}
+      >
+        <p className="text-sm leading-7 text-ink-600">
+          Drag and drop files here, or use the picker above. Uploads use
+          short-lived signed PUT URLs, show live progress, and can be cancelled
+          or retried before finalization.
+        </p>
+      </div>
+
       <div className="mt-6 space-y-4">
         {uploads.length === 0 ? (
           <p className="text-sm leading-7 text-ink-600">
-            Uploads are issued as short-lived signed PUT URLs. Make sure your
-            bucket CORS rules allow your app origin for the S3-compatible API.
+            Your Backblaze B2 bucket must allow your app origin in its CORS
+            rules for browser-direct uploads.
           </p>
         ) : null}
 
         {uploads.map((upload) => (
           <article
-            key={`${upload.fileName}-${upload.status}`}
+            key={upload.id}
             className="rounded-[1.5rem] border border-ink-200/80 bg-surface-strong p-4"
           >
             <div className="flex items-center justify-between gap-4">
-              <p className="font-medium text-ink-950">{upload.fileName}</p>
+              <div className="min-w-0">
+                <p className="truncate font-medium text-ink-950">{upload.displayName}</p>
+                <p className="mt-1 text-xs text-ink-500">
+                  {upload.file.name} • {upload.file.size.toLocaleString()} bytes
+                </p>
+              </div>
               <p className="text-sm text-ink-600">{upload.progress}%</p>
             </div>
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-ink-200">
               <div
                 className={`h-full rounded-full ${
-                  upload.status === "error" ? "bg-red-500" : "bg-emerald-600"
+                  upload.status === "error"
+                    ? "bg-red-500"
+                    : upload.status === "cancelled"
+                      ? "bg-amber-500"
+                      : "bg-emerald-600"
                 }`}
                 style={{ width: `${upload.progress}%` }}
               />
             </div>
-            <p className="mt-3 text-sm text-ink-600">
-              {upload.message ??
-                (upload.status === "finalizing"
-                  ? "Verifying object and finalizing metadata."
-                  : upload.status === "uploading"
-                    ? "Uploading to storage."
-                    : upload.status === "done"
-                      ? "Upload complete."
-                      : "Waiting.")}
-            </p>
+            <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <p className="text-sm text-ink-600">
+                {upload.message ??
+                  (upload.status === "queued"
+                    ? "Waiting to start."
+                    : upload.status === "finalizing"
+                      ? "Verifying upload."
+                      : upload.status === "done"
+                        ? "Upload complete."
+                        : "Uploading.")}
+              </p>
+              <div className="flex gap-2">
+                {upload.status === "uploading" || upload.status === "finalizing" ? (
+                  <button
+                    type="button"
+                    onClick={() => void cancelUpload(upload)}
+                    className="rounded-full border border-ink-300 px-4 py-2 text-xs font-medium text-ink-700 transition hover:border-ink-500 hover:bg-white"
+                  >
+                    Cancel
+                  </button>
+                ) : null}
+                {upload.status === "error" || upload.status === "cancelled" ? (
+                  <button
+                    type="button"
+                    onClick={() => void startUpload(upload.id)}
+                    className="rounded-full border border-emerald-300 px-4 py-2 text-xs font-medium text-emerald-800 transition hover:bg-white"
+                  >
+                    Retry
+                  </button>
+                ) : null}
+              </div>
+            </div>
           </article>
         ))}
       </div>

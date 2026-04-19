@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
+import { getAppSettings } from "@/lib/app-settings";
 import { env, readiness } from "@/lib/env";
 import { siteConfig } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
-export function GET() {
+export async function GET() {
+  const settings = await getAppSettings();
+
   return NextResponse.json(
     {
       status: "ok",
@@ -12,8 +15,9 @@ export function GET() {
       timestamp: new Date().toISOString(),
       config: {
         appUrl: env.appBaseUrl,
-        maxUploadSizeBytes: env.maxUploadSizeBytes,
-        defaultSoftDeleteRetentionDays: env.defaultSoftDeleteRetentionDays,
+        maxUploadSizeBytes: settings.maxUploadSizeBytes,
+        defaultSoftDeleteRetentionDays: settings.defaultSoftDeleteRetentionDays,
+        defaultShareExpiryDays: settings.defaultShareExpiryDays,
       },
       readiness,
     },

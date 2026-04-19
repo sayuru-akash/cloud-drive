@@ -35,20 +35,20 @@ export default async function SharedPage() {
 
   return (
     <main className="space-y-6">
-      <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-8 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
+      <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur md:p-8">
         <p className="text-sm uppercase tracking-[0.24em] text-ink-500">
           Shared resources
         </p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-[-0.05em] text-ink-950">
+        <h1 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-ink-950 sm:text-4xl">
           Public links are revocable, expiring, and private-bucket backed.
         </h1>
-        <p className="mt-3 max-w-2xl text-base leading-8 text-ink-700">
+        <p className="mt-3 max-w-2xl text-sm leading-7 text-ink-700 sm:text-base sm:leading-8">
           Links resolve to the public `/s/[token]` route, which validates the
           share record before issuing a short-lived signed object URL.
         </p>
       </section>
 
-      <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
+      <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-5 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur sm:p-6">
         {rows.length === 0 ? (
         <p className="text-sm leading-7 text-ink-600">
           No share links yet. Create them from the Files view. Newly created
@@ -81,7 +81,7 @@ export default async function SharedPage() {
                     </form>
                   ) : null}
                 </div>
-                <p className="text-xs text-ink-500">
+                <p className="max-w-full text-xs leading-6 text-ink-500">
                   Create new links from individual file rows in `/files`.
                 </p>
               </article>
