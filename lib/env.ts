@@ -86,11 +86,7 @@ export const env = {
   b2ApplicationKey: parsedServerEnv.B2_APPLICATION_KEY,
   b2BucketName: parsedServerEnv.B2_BUCKET_NAME,
   resendApiKey: parsedServerEnv.RESEND_API_KEY,
-  resendFromEmail:
-    parsedServerEnv.RESEND_FROM_EMAIL ??
-    (parsedServerEnv.INTERNAL_EMAIL_DOMAIN
-      ? `Cloud Drive <noreply@${parsedServerEnv.INTERNAL_EMAIL_DOMAIN.toLowerCase()}>`
-      : undefined),
+  resendFromEmail: parsedServerEnv.RESEND_FROM_EMAIL,
   maxUploadSizeBytes: parsedServerEnv.MAX_UPLOAD_SIZE_BYTES,
   defaultSoftDeleteRetentionDays:
     parsedServerEnv.DEFAULT_SOFT_DELETE_RETENTION_DAYS,

@@ -61,6 +61,9 @@ An internal file workspace built on Next.js 16, Better Auth, Drizzle, Neon, Back
 - `RESEND_FROM_EMAIL`
 - `INTERNAL_EMAIL_DOMAIN`
 
+`RESEND_FROM_EMAIL` must use an address on a domain or subdomain that is
+verified in Resend, for example `Cloud Drive <noreply@email.yourcompany.com>`.
+
 ## Backblaze notes
 
 - Keep the B2 bucket private.

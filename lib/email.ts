@@ -15,17 +15,25 @@ async function sendEmail({
   html: string;
   text: string;
 }) {
-  if (!resend || !env.resendFromEmail) {
-    return;
+  if (!resend) {
+    throw new Error("RESEND_API_KEY is not configured.");
   }
 
-  await resend.emails.send({
+  if (!env.resendFromEmail) {
+    throw new Error("RESEND_FROM_EMAIL is not configured.");
+  }
+
+  const result = await resend.emails.send({
     from: env.resendFromEmail,
     to,
     subject,
     html,
     text,
   });
+
+  if (result.error) {
+    throw new Error(result.error.message);
+  }
 }
 
 export async function sendPasswordResetEmail({

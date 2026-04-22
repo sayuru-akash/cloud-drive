@@ -24,19 +24,39 @@ export function PasswordRecoveryPanel({
     setLocalError(null);
     setMessage(null);
 
+    const email = requestEmail.trim();
+
+    if (!email) {
+      setLocalError("Enter your email address.");
+      return;
+    }
+
     startTransition(async () => {
       const redirectTo = `${window.location.origin}/reset-password`;
-      const result = await authClient.requestPasswordReset({
-        email: requestEmail.trim(),
-        redirectTo,
+      const response = await fetch("/api/password-reset/request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          redirectTo,
+        }),
       });
+      const result = (await response.json().catch(() => null)) as
+        | { message?: string }
+        | null;
 
-      if (result.error) {
-        setLocalError(result.error.message ?? "Could not send reset email.");
+      if (!response.ok) {
+        setLocalError(
+          result?.message ?? "We couldn't send the reset email right now.",
+        );
         return;
       }
 
-      setMessage("Check your inbox for a reset link.");
+      setMessage(
+        result?.message ?? "If this email exists, check your inbox for a reset link.",
+      );
     });
   }
 
