@@ -1,15 +1,27 @@
-import { FolderOpen, Link2, Shield, UploadCloud } from "lucide-react";
+import { FileText, FolderKanban, LayoutDashboard, Link2, Trash2 } from "lucide-react";
 
-const previewFolders = [
-  "Finance / Q2 planning",
-  "Contracts / Vendor renewals",
-  "Operations / Regional playbooks",
+const files = [
+  {
+    name: "Q2 Financial Review.xlsx",
+    meta: "Modified 2 hours ago",
+    badge: "Shared",
+  },
+  {
+    name: "Brand Guidelines v3.pdf",
+    meta: "Modified yesterday",
+    badge: "Private",
+  },
+  {
+    name: "Onboarding Checklist.docx",
+    meta: "Modified 3 days ago",
+    badge: "Private",
+  },
 ];
 
-const previewEvents = [
-  "Signed upload URL issued for pricing-model-v7.xlsx",
-  "Public view link revoked by admin policy",
-  "Deleted folder restored inside retention window",
+const activities = [
+  "You uploaded Q2 Financial Review.xlsx",
+  "Alex shared Brand Guidelines with the team",
+  "Maya restored a file from trash",
 ];
 
 export function DashboardPreview() {
@@ -19,34 +31,36 @@ export function DashboardPreview() {
       <div className="overflow-hidden rounded-[2.25rem] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.78),rgba(255,255,255,0.52))] shadow-[0_40px_120px_-56px_rgba(15,23,42,0.6)] backdrop-blur">
         <div className="flex items-center justify-between border-b border-ink-200/60 px-6 py-4">
           <div>
-            <p className="text-sm font-medium text-ink-950">Workspace control plane</p>
+            <p className="text-sm font-medium text-ink-950">Company files</p>
             <p className="text-sm text-ink-600">
-              Uploads, visibility, audit, and recovery
+              24 files, 3 shared
             </p>
           </div>
-          <div className="rounded-full bg-emerald-700/10 px-3 py-1 text-xs font-medium text-emerald-800">
-            Ready for auth + storage wiring
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-emerald-700/10 px-3 py-1 text-xs font-medium text-emerald-800">
+              All good
+            </span>
           </div>
         </div>
 
-        <div className="grid gap-0 lg:grid-cols-[16rem_minmax(0,1fr)]">
+        <div className="grid gap-0 lg:grid-cols-[14rem_minmax(0,1fr)]">
           <aside className="border-b border-ink-200/60 bg-white/70 p-5 lg:border-b-0 lg:border-r">
-            <div className="space-y-2 text-sm text-ink-700">
+            <div className="space-y-1 text-sm text-ink-700">
               <div className="flex items-center gap-3 rounded-2xl bg-ink-950 px-4 py-3 text-white">
-                <FolderOpen className="h-4 w-4" />
+                <LayoutDashboard className="h-4 w-4" />
                 Dashboard
               </div>
               <div className="flex items-center gap-3 rounded-2xl px-4 py-3">
-                <UploadCloud className="h-4 w-4 text-emerald-700" />
-                Upload sessions
+                <FolderKanban className="h-4 w-4 text-emerald-700" />
+                Files
               </div>
               <div className="flex items-center gap-3 rounded-2xl px-4 py-3">
                 <Link2 className="h-4 w-4 text-emerald-700" />
-                Shared links
+                Shared
               </div>
               <div className="flex items-center gap-3 rounded-2xl px-4 py-3">
-                <Shield className="h-4 w-4 text-emerald-700" />
-                Admin rules
+                <Trash2 className="h-4 w-4 text-emerald-700" />
+                Trash
               </div>
             </div>
           </aside>
@@ -54,22 +68,23 @@ export function DashboardPreview() {
           <div className="space-y-6 p-6">
             <section className="space-y-3">
               <p className="text-xs uppercase tracking-[0.22em] text-ink-500">
-                Current folders
+                Recent files
               </p>
               <div className="space-y-3">
-                {previewFolders.map((folder) => (
+                {files.map((file) => (
                   <div
-                    key={folder}
+                    key={file.name}
                     className="flex items-center justify-between rounded-[1.4rem] border border-ink-200/70 bg-white/88 px-4 py-4"
                   >
-                    <div>
-                      <p className="font-medium text-ink-950">{folder}</p>
-                      <p className="text-sm text-ink-600">
-                        Workspace visibility with audit trail
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-4 w-4 text-ink-500" />
+                      <div>
+                        <p className="font-medium text-ink-950">{file.name}</p>
+                        <p className="text-sm text-ink-600">{file.meta}</p>
+                      </div>
                     </div>
-                    <span className="rounded-full bg-emerald-700/10 px-3 py-1 text-xs font-medium text-emerald-800">
-                      Synced
+                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${file.badge === "Shared" ? "bg-emerald-700/10 text-emerald-800" : "bg-ink-100 text-ink-600"}`}>
+                      {file.badge}
                     </span>
                   </div>
                 ))}
@@ -77,13 +92,13 @@ export function DashboardPreview() {
             </section>
 
             <section className="grid gap-4 md:grid-cols-3">
-              {previewEvents.map((event, index) => (
+              {activities.map((activity, index) => (
                 <div
-                  key={event}
+                  key={activity}
                   className="rounded-[1.5rem] border border-ink-200/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.9),rgba(247,244,238,0.82))] p-4"
                 >
                   <p className="font-mono text-xs text-ink-500">0{index + 1}</p>
-                  <p className="mt-3 text-sm leading-7 text-ink-700">{event}</p>
+                  <p className="mt-3 text-sm leading-7 text-ink-700">{activity}</p>
                 </div>
               ))}
             </section>

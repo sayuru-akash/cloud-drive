@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export function BrandMark() {
+export function BrandMark({ variant = "default" }: { variant?: "default" | "minimal" }) {
   return (
     <Link
       href="/"
@@ -13,9 +13,11 @@ export function BrandMark() {
         <span className="text-base font-semibold tracking-[-0.05em]">
           Cloud Drive
         </span>
-        <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-500">
-          Internal file ops
-        </span>
+        {variant === "default" && (
+          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-500">
+            Internal file ops
+          </span>
+        )}
       </span>
     </Link>
   );
