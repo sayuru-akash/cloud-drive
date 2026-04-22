@@ -14,6 +14,7 @@ import { db } from "@/lib/db/client";
 import { files, shareLinks } from "@/lib/db/schema";
 import { canManageAdmin } from "@/lib/drive";
 import { formatDate } from "@/lib/format";
+import { getShareLinkStatus } from "@/lib/share-links";
 
 export const metadata: Metadata = {
   title: "Shared",
@@ -42,9 +43,19 @@ export default async function SharedPage() {
         .where(eq(shareLinks.createdByUserId, session.user.id))
         .orderBy(desc(shareLinks.createdAt)));
 
-  const activeCount = rows.filter((r) => !r.isRevoked).length;
+  const activeCount = rows.filter(
+    (r) =>
+      getShareLinkStatus({
+        expiresAt: r.expiresAt,
+        isRevoked: r.isRevoked,
+      }) === "active",
+  ).length;
   const expiredCount = rows.filter(
-    (r) => !r.isRevoked && r.expiresAt && new Date(r.expiresAt) < new Date(),
+    (r) =>
+      getShareLinkStatus({
+        expiresAt: r.expiresAt,
+        isRevoked: r.isRevoked,
+      }) === "expired",
   ).length;
 
   return (
@@ -88,15 +99,10 @@ export default async function SharedPage() {
             </div>
 
             {rows.map((row) => {
-              const isExpired =
-                !row.isRevoked &&
-                row.expiresAt &&
-                new Date(row.expiresAt) < new Date();
-              const status = row.isRevoked
-                ? "revoked"
-                : isExpired
-                  ? "expired"
-                  : "active";
+              const status = getShareLinkStatus({
+                expiresAt: row.expiresAt,
+                isRevoked: row.isRevoked,
+              });
 
               return (
                 <div

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { desc } from "drizzle-orm";
+import { and, count, desc, eq, gt, isNull, or } from "drizzle-orm";
 import {
   Activity,
   CheckCircle2,
@@ -17,6 +17,7 @@ import { getAppSettings } from "@/lib/app-settings";
 import { db } from "@/lib/db/client";
 import { auditLogs, shareLinks, users } from "@/lib/db/schema";
 import { formatDate } from "@/lib/format";
+import { getShareLinkStatus } from "@/lib/share-links";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
 export default async function AdminPage() {
   await requireAdminSession();
 
-  const [userRows, auditRows, settings, shareRows] = await Promise.all([
+  const [userRows, auditRows, settings, shareRows, activeLinksRow] = await Promise.all([
     db
       .select({
         id: users.id,
@@ -60,10 +61,20 @@ export default async function AdminPage() {
       .from(shareLinks)
       .orderBy(desc(shareLinks.createdAt))
       .limit(10),
+    db
+      .select({ value: count() })
+      .from(shareLinks)
+      .where(
+        and(
+          eq(shareLinks.isRevoked, false),
+          or(isNull(shareLinks.expiresAt), gt(shareLinks.expiresAt, new Date())),
+        ),
+      )
+      .then((rows) => rows[0]),
   ]);
 
   const activeUsers = userRows.filter((u) => u.isActive !== false).length;
-  const activeLinks = shareRows.filter((s) => !s.isRevoked).length;
+  const activeLinks = activeLinksRow?.value ?? 0;
 
   return (
     <main className="space-y-6">
@@ -322,35 +333,48 @@ export default async function AdminPage() {
               {shareRows.length === 0 ? (
                 <p className="text-sm text-ink-600">No links yet.</p>
               ) : (
-                shareRows.map((row) => (
-                  <div
-                    key={row.id}
-                    className="flex items-center justify-between gap-4 rounded-[1.25rem] border border-ink-200/60 bg-white/70 px-4 py-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      {row.isRevoked ? (
-                        <XCircle className="h-4 w-4 text-ink-400" />
-                      ) : (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                      )}
-                      <div>
-                        <p className="text-sm font-medium text-ink-950 capitalize">
-                          {row.mode}
-                        </p>
-                        <p className="text-xs text-ink-500">
-                          {row.isRevoked
-                            ? "Revoked"
-                            : row.expiresAt
-                              ? `Expires ${formatDate(row.expiresAt)}`
-                              : "No expiry"}
-                        </p>
+                shareRows.map((row) => {
+                  const status = getShareLinkStatus({
+                    expiresAt: row.expiresAt,
+                    isRevoked: row.isRevoked,
+                  });
+
+                  return (
+                    <div
+                      key={row.id}
+                      className="flex items-center justify-between gap-4 rounded-[1.25rem] border border-ink-200/60 bg-white/70 px-4 py-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        {status === "revoked" ? (
+                          <XCircle className="h-4 w-4 text-ink-400" />
+                        ) : status === "expired" ? (
+                          <XCircle className="h-4 w-4 text-amber-600" />
+                        ) : (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        )}
+                        <div>
+                          <p className="text-sm font-medium text-ink-950 capitalize">
+                            {row.mode}
+                          </p>
+                          <p className="text-xs text-ink-500">
+                            {status === "revoked"
+                              ? "Revoked"
+                              : status === "expired"
+                                ? row.expiresAt
+                                  ? `Expired ${formatDate(row.expiresAt)}`
+                                  : "Expired"
+                                : row.expiresAt
+                                  ? `Expires ${formatDate(row.expiresAt)}`
+                                  : "No expiry"}
+                          </p>
+                        </div>
                       </div>
+                      <span className="text-xs text-ink-400">
+                        {formatDate(row.createdAt)}
+                      </span>
                     </div>
-                    <span className="text-xs text-ink-400">
-                      {formatDate(row.createdAt)}
-                    </span>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </section>

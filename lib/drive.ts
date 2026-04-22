@@ -1,5 +1,5 @@
 import "server-only";
-import { and, count, eq, isNull, desc } from "drizzle-orm";
+import { and, count, eq, isNull, desc, gt, or } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
   fileVersions,
@@ -516,10 +516,14 @@ export async function getDashboardData(userId: string, userRole?: string | null)
     .from(shareLinks)
     .where(
       canManageAdmin(userRole)
-        ? eq(shareLinks.isRevoked, false)
+        ? and(
+            eq(shareLinks.isRevoked, false),
+            or(isNull(shareLinks.expiresAt), gt(shareLinks.expiresAt, new Date())),
+          )
         : and(
             eq(shareLinks.isRevoked, false),
             eq(shareLinks.createdByUserId, userId),
+            or(isNull(shareLinks.expiresAt), gt(shareLinks.expiresAt, new Date())),
           ),
     );
 
