@@ -1,12 +1,12 @@
 /* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Download, Eye, ShieldAlert } from "lucide-react";
+import { Download, Eye, FileText } from "lucide-react";
 import { getActivePublicShareByToken } from "@/lib/shares";
 
 export const metadata: Metadata = {
-  title: "Shared Resource",
-  description: "Public share link surface for view-only and download-enabled resources.",
+  title: "Shared file",
+  description: "A file shared with you through Cloud Drive.",
 };
 
 export default async function PublicSharePage({
@@ -19,14 +19,17 @@ export default async function PublicSharePage({
 
   if (!share) {
     return (
-      <main className="flex min-h-screen items-center justify-center px-6 py-16">
-        <div className="w-full max-w-xl rounded-[2rem] border border-ink-200/80 bg-white/82 p-8 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)] backdrop-blur">
+      <main className="relative flex min-h-screen items-center justify-center px-6 py-16">
+        <div className="absolute inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(circle_at_top_left,rgba(25,122,104,0.18),transparent_38%),radial-gradient(circle_at_top_right,rgba(15,23,42,0.1),transparent_30%),linear-gradient(180deg,#f7f3ec_0%,#f3efe6_44%,#f7f4ee_100%)]" />
+        <div className="absolute inset-x-0 top-20 -z-10 h-64 bg-[radial-gradient(circle,rgba(255,255,255,0.82),transparent_62%)] blur-3xl" />
+
+        <div className="w-full max-w-xl rounded-[2rem] border border-ink-200/80 bg-white/82 p-10 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)] backdrop-blur">
           <p className="font-mono text-sm text-ink-500">Invalid link</p>
           <h1 className="mt-3 text-4xl font-semibold tracking-[-0.05em] text-ink-950">
-            This share link is unavailable.
+            This link is unavailable.
           </h1>
-          <p className="mt-3 text-base leading-8 text-ink-700">
-            It may be expired, revoked, or linked to a deleted file.
+          <p className="mt-3 text-lg leading-8 text-ink-700">
+            It may have expired, been revoked, or the file was deleted.
           </p>
         </div>
       </main>
@@ -41,59 +44,42 @@ export default async function PublicSharePage({
     : null;
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-6 py-16">
-      <div className="w-full max-w-3xl rounded-[2rem] border border-ink-200/80 bg-white/82 p-8 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)] backdrop-blur">
-        <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
+    <main className="relative flex min-h-screen items-center justify-center px-6 py-16">
+      <div className="absolute inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(circle_at_top_left,rgba(25,122,104,0.18),transparent_38%),radial-gradient(circle_at_top_right,rgba(15,23,42,0.1),transparent_30%),linear-gradient(180deg,#f7f3ec_0%,#f3efe6_44%,#f7f4ee_100%)]" />
+      <div className="absolute inset-x-0 top-20 -z-10 h-64 bg-[radial-gradient(circle,rgba(255,255,255,0.82),transparent_62%)] blur-3xl" />
+
+      <div className="w-full max-w-3xl rounded-[2rem] border border-ink-200/80 bg-white/82 p-10 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)] backdrop-blur">
+        <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div className="max-w-xl space-y-4">
             <p className="font-mono text-sm text-ink-500">Shared file</p>
-            <h1 className="text-4xl font-semibold tracking-[-0.05em] text-ink-950">
-              {share.fileName}
-            </h1>
-            <p className="text-base leading-8 text-ink-700">
-              View-only links are streamed through the app so the browser can
-              preview supported files without exposing a reusable object URL.
+            <div className="flex items-center gap-3">
+              <FileText className="h-6 w-6 text-emerald-700" />
+              <h1 className="text-3xl font-semibold tracking-[-0.05em] text-ink-950 sm:text-4xl">
+                {share.fileName}
+              </h1>
+            </div>
+            <p className="text-lg leading-8 text-ink-700">
+              Someone shared this file with you through Cloud Drive.
             </p>
           </div>
 
-          <div className="rounded-[1.5rem] border border-emerald-700/20 bg-emerald-700/8 p-5 text-sm text-emerald-900">
-            <p className="flex items-center gap-2 font-medium">
-              <ShieldAlert className="h-4 w-4" />
-              Shared-link policy
-            </p>
-            <p className="mt-2 leading-7">
-              Deleted, expired, or revoked resources fail closed. Downloads stay
-              disabled unless the link was created in download mode.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-8 grid gap-4 border-t border-ink-200/80 pt-8 md:grid-cols-2">
-          <div className="rounded-[1.5rem] border border-ink-200/80 bg-surface-strong p-5">
-            <p className="flex items-center gap-2 font-medium text-ink-950">
-              <Eye className="h-4 w-4 text-emerald-700" />
-              View-only mode
-            </p>
-            <p className="mt-3 text-sm leading-7 text-ink-600">
-              {share.mode === "view"
-                ? "Preview is available where the file type supports it, but direct download is disabled."
-                : "Preview access is available alongside downloads."}
-            </p>
-          </div>
-          <div className="rounded-[1.5rem] border border-ink-200/80 bg-surface-strong p-5">
-            <p className="flex items-center gap-2 font-medium text-ink-950">
-              <Download className="h-4 w-4 text-emerald-700" />
-              Download-enabled mode
-            </p>
-            <p className="mt-3 text-sm leading-7 text-ink-600">
-              {share.mode === "download"
-                ? "This link can issue a short-lived download redirect after server-side validation."
-                : "Downloads are disabled for this share link."}
-            </p>
+          <div className="flex items-center gap-2">
+            {share.mode === "view" ? (
+              <span className="inline-flex items-center gap-2 rounded-full bg-emerald-700/10 px-4 py-2 text-sm font-medium text-emerald-800">
+                <Eye className="h-4 w-4" />
+                View only
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-2 rounded-full bg-emerald-700/10 px-4 py-2 text-sm font-medium text-emerald-800">
+                <Download className="h-4 w-4" />
+                Download allowed
+              </span>
+            )}
           </div>
         </div>
 
         {previewUrl ? (
-          <div className="mt-8 overflow-hidden rounded-[1.5rem] border border-ink-200/80 bg-surface-strong p-3">
+          <div className="mt-10 overflow-hidden rounded-[1.5rem] border border-ink-200/80 bg-surface-strong p-3">
             {share.mimeType === "application/pdf" ? (
               <iframe
                 src={previewUrl}
@@ -110,20 +96,21 @@ export default async function PublicSharePage({
           </div>
         ) : null}
 
-        <div className="mt-8 flex gap-3">
+        <div className="mt-10 flex flex-wrap gap-3">
           {downloadUrl ? (
             <a
               href={downloadUrl}
-              className="rounded-full bg-ink-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-ink-800"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-ink-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-ink-800"
             >
-              Download file
+              <Download className="h-4 w-4" />
+              Download
             </a>
           ) : null}
           <Link
             href="/"
             className="rounded-full border border-ink-300 px-5 py-3 text-sm font-medium text-ink-800 transition hover:border-ink-500 hover:bg-white"
           >
-            Return home
+            Back home
           </Link>
         </div>
       </div>

@@ -36,7 +36,7 @@ export function AuthPanel() {
             });
 
       if (result.error) {
-        setError(result.error.message ?? "Authentication failed.");
+        setError(result.error.message ?? "Something went wrong. Please try again.");
         return;
       }
 
@@ -79,6 +79,7 @@ export function AuthPanel() {
               name="name"
               required
               autoComplete="name"
+              placeholder="Jane Doe"
               className="w-full rounded-2xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900"
             />
           </div>
@@ -86,7 +87,7 @@ export function AuthPanel() {
 
         <div className="space-y-2">
           <label className="text-sm font-medium text-ink-800" htmlFor="email">
-            Work email
+            Email
           </label>
           <input
             id="email"
@@ -94,6 +95,7 @@ export function AuthPanel() {
             type="email"
             required
             autoComplete="email"
+            placeholder="you@company.com"
             className="w-full rounded-2xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900"
           />
         </div>
@@ -109,6 +111,7 @@ export function AuthPanel() {
             required
             minLength={10}
             autoComplete={mode === "sign-up" ? "new-password" : "current-password"}
+            placeholder="At least 10 characters"
             className="w-full rounded-2xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900"
           />
         </div>
@@ -125,7 +128,9 @@ export function AuthPanel() {
           className="inline-flex w-full items-center justify-center rounded-full bg-ink-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-ink-800 disabled:opacity-60"
         >
           {isPending
-            ? "Working..."
+            ? mode === "sign-up"
+              ? "Creating account..."
+              : "Signing in..."
             : mode === "sign-up"
               ? "Create account"
               : "Sign in"}

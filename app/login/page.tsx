@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { ShieldCheck } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { AuthPanel } from "@/components/auth-panel";
 import { BrandMark } from "@/components/brand-mark";
 import { getSession } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
-  title: "Login",
-  description: "Sign in to Cloud Drive with your internal account.",
+  title: "Sign in",
+  description: "Sign in to your Cloud Drive workspace.",
 };
 
 export default async function LoginPage() {
@@ -18,45 +18,42 @@ export default async function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-screen bg-background lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-      <section className="flex items-center justify-center px-6 py-16">
-        <div className="w-full max-w-md space-y-8">
-          <BrandMark />
+    <main className="grid min-h-screen bg-background lg:grid-cols-2">
+      <section className="relative flex items-center justify-center px-6 py-16 lg:px-10">
+        <div className="w-full max-w-md space-y-10">
+          <BrandMark variant="minimal" />
           <div className="space-y-3">
-            <p className="text-sm uppercase tracking-[0.24em] text-ink-500">
-              Internal access
-            </p>
             <h1 className="text-4xl font-semibold tracking-[-0.05em] text-ink-950">
-              Sign in to the company file workspace.
+              Welcome back
             </h1>
-            <p className="text-base leading-8 text-ink-700">
-              Email and password authentication is live. The first registered
-              account becomes `super_admin`; later accounts default to `member`.
-              Password recovery is available through email.
+            <p className="text-lg leading-8 text-ink-700">
+              Sign in to access your workspace.
             </p>
           </div>
           <AuthPanel />
         </div>
       </section>
 
-      <section className="hidden bg-[radial-gradient(circle_at_top_left,rgba(25,122,104,0.2),transparent_28%),linear-gradient(180deg,#111827_0%,#18212f_100%)] px-10 py-16 text-white lg:flex lg:items-center">
-        <div className="mx-auto max-w-xl space-y-6">
+      <section className="hidden bg-[radial-gradient(circle_at_top_left,rgba(25,122,104,0.2),transparent_28%),linear-gradient(180deg,#111827_0%,#18212f_100%)] px-6 py-16 text-white lg:flex lg:items-center lg:px-10">
+        <div className="mx-auto w-full max-w-md space-y-8">
           <p className="text-sm uppercase tracking-[0.26em] text-emerald-300">
-            Production posture
+            Cloud Drive
           </p>
-          <h2 className="text-5xl font-semibold tracking-[-0.05em]">
-            Auth, storage, and audit now run through real server flows.
+          <h2 className="text-4xl font-semibold tracking-[-0.05em] xl:text-5xl">
+            Your files, organized and secure.
           </h2>
           <div className="space-y-4 text-base leading-8 text-white/72">
             <p className="flex gap-3">
-              <ShieldCheck className="mt-1 h-5 w-5 shrink-0 text-emerald-300" />
-              Session validation happens in protected layouts and route handlers,
-              not only in the client.
+              <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-emerald-300" />
+              Upload and share files with your team in seconds.
             </p>
             <p className="flex gap-3">
-              <ShieldCheck className="mt-1 h-5 w-5 shrink-0 text-emerald-300" />
-              Uploads are brokered through short-lived signed URLs while file
-              metadata and permissions stay in Postgres.
+              <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-emerald-300" />
+              Recover deleted files anytime within your retention window.
+            </p>
+            <p className="flex gap-3">
+              <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-emerald-300" />
+              Admin controls and audit logs keep your workspace safe.
             </p>
           </div>
         </div>

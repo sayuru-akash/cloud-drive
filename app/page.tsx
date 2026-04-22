@@ -176,6 +176,9 @@ export default function Home() {
         <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-4 px-6 text-sm text-white/50 sm:flex-row lg:px-10">
           <p>© 2026 Cloud Drive</p>
           <div className="flex items-center gap-6">
+            <Link href="/privacy" className="transition hover:text-white/80">
+              Privacy
+            </Link>
             <Link href="/login" className="transition hover:text-white/80">
               Sign in
             </Link>

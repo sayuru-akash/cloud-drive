@@ -36,7 +36,7 @@ export function PasswordRecoveryPanel({
         return;
       }
 
-      setMessage("If that account exists, a password reset email has been sent.");
+      setMessage("Check your inbox for a reset link.");
     });
   }
 
@@ -50,7 +50,7 @@ export function PasswordRecoveryPanel({
     }
 
     if (password.length < 10) {
-      setLocalError("Password must be at least 10 characters.");
+      setLocalError("Use at least 10 characters.");
       return;
     }
 
@@ -77,15 +77,6 @@ export function PasswordRecoveryPanel({
 
   return (
     <div className="space-y-6 rounded-[2rem] border border-ink-200/80 bg-white/82 p-8 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)] backdrop-blur">
-      <div className="space-y-2">
-        <p className="text-sm uppercase tracking-[0.24em] text-ink-500">
-          {isResetMode ? "Reset password" : "Recover access"}
-        </p>
-        <h1 className="text-3xl font-semibold tracking-[-0.05em] text-ink-950">
-          {isResetMode ? "Choose a new password." : "Send a reset link to your email."}
-        </h1>
-      </div>
-
       <div className="space-y-4">
         {isResetMode ? (
           <>
@@ -113,7 +104,7 @@ export function PasswordRecoveryPanel({
               onClick={handleResetPassword}
               className="inline-flex w-full items-center justify-center rounded-full bg-ink-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-ink-800 disabled:opacity-60"
             >
-              {isPending ? "Resetting..." : "Reset password"}
+              {isPending ? "Saving..." : "Reset password"}
             </button>
           </>
         ) : (
@@ -122,7 +113,7 @@ export function PasswordRecoveryPanel({
               type="email"
               value={requestEmail}
               onChange={(event) => setRequestEmail(event.target.value)}
-              placeholder="Work email"
+              placeholder="you@company.com"
               autoComplete="email"
               className="w-full rounded-2xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900"
             />
