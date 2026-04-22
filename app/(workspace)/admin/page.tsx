@@ -149,14 +149,17 @@ export default async function AdminPage() {
                       name="role"
                       defaultValue={user.role ?? "member"}
                       className="rounded-xl border border-ink-200 bg-white px-2 py-1.5 text-xs text-ink-900"
-                      onChange={(e) => {
-                        e.currentTarget.form?.requestSubmit();
-                      }}
                     >
                       <option value="member">Member</option>
                       <option value="admin">Admin</option>
                       <option value="super_admin">Super admin</option>
                     </select>
+                    <button
+                      type="submit"
+                      className="rounded-full border border-ink-300 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-ink-600 transition hover:border-ink-500 hover:bg-white"
+                    >
+                      Save
+                    </button>
                   </form>
 
                   <form
@@ -170,13 +173,16 @@ export default async function AdminPage() {
                         user.isActive === false ? "false" : "true"
                       }
                       className="rounded-xl border border-ink-200 bg-white px-2 py-1.5 text-xs text-ink-900"
-                      onChange={(e) => {
-                        e.currentTarget.form?.requestSubmit();
-                      }}
                     >
                       <option value="true">Active</option>
                       <option value="false">Disabled</option>
                     </select>
+                    <button
+                      type="submit"
+                      className="rounded-full border border-ink-300 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-ink-600 transition hover:border-ink-500 hover:bg-white"
+                    >
+                      Save
+                    </button>
                   </form>
 
                   <span className="text-right text-sm text-ink-500">
