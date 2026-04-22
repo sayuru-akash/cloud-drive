@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { FolderNode } from "@/lib/drive";
 import {
@@ -70,6 +70,7 @@ export function FilesShell({
   };
 }) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [moveOpen, setMoveOpen] = useState(false);
@@ -248,6 +249,12 @@ export function FilesShell({
 
   const totalItems = folders.length + files.length;
 
+  function handleRefresh() {
+    startTransition(() => {
+      router.refresh();
+    });
+  }
+
   return (
     <main
       className="space-y-6"
@@ -284,6 +291,8 @@ export function FilesShell({
           setNewFolderOpen(true);
         }}
         onUpload={() => fileInputRef.current?.click()}
+        onRefresh={handleRefresh}
+        isRefreshing={isPending}
       />
 
       <div className="min-w-0">

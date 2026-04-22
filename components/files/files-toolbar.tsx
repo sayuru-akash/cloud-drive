@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   LayoutList,
   Plus,
+  RotateCw,
   Search,
   FolderPlus,
   Upload,
@@ -28,6 +29,8 @@ export function FilesToolbar({
   selectedCount,
   onNewFolder,
   onUpload,
+  onRefresh,
+  isRefreshing,
 }: {
   breadcrumbs: Array<{ id: string; name: string }>;
   folderId: string | null;
@@ -46,6 +49,8 @@ export function FilesToolbar({
   selectedCount: number;
   onNewFolder: () => void;
   onUpload: () => void;
+  onRefresh: () => void;
+  isRefreshing: boolean;
 }) {
   const router = useRouter();
 
@@ -167,6 +172,17 @@ export function FilesToolbar({
             </select>
 
             <div className="ml-auto flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onRefresh}
+                disabled={isRefreshing}
+                className="inline-flex items-center gap-1.5 rounded-full border border-ink-300 px-4 py-2.5 text-sm font-medium text-ink-700 transition hover:border-ink-500 hover:bg-white disabled:opacity-50"
+              >
+                <RotateCw
+                  className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                />
+                Refresh
+              </button>
               {totalItems > 0 && (
                 <button
                   type="button"
