@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { logAuditEvent } from "@/lib/audit";
 import { getActivePublicShareByToken } from "@/lib/shares";
-import { createDownloadUrl } from "@/lib/storage";
+import { createDownloadUrlWithOptions } from "@/lib/storage";
 
 export async function GET(
   _request: Request,
@@ -14,7 +14,9 @@ export async function GET(
     return NextResponse.json({ error: "Download unavailable." }, { status: 404 });
   }
 
-  const url = await createDownloadUrl(share.version.storageKey);
+  const url = await createDownloadUrlWithOptions(share.version.storageKey, {
+    filename: share.fileName ?? "file",
+  });
 
   await logAuditEvent({
     actionType: "file.downloaded",

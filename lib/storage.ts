@@ -51,11 +51,36 @@ export async function createUploadUrl({
 }
 
 export async function createDownloadUrl(storageKey: string) {
+  return createDownloadUrlWithOptions(storageKey);
+}
+
+function buildDownloadDisposition(filename?: string) {
+  if (!filename) {
+    return 'attachment; filename="file"';
+  }
+
+  const safeFilename = filename
+    .replace(/[\r\n"]/g, "")
+    .trim();
+
+  const fallback = safeFilename
+    .normalize("NFKD")
+    .replace(/[^\x20-\x7E]+/g, "")
+    .trim() || "file";
+
+  return `attachment; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(safeFilename || "file")}`;
+}
+
+export async function createDownloadUrlWithOptions(
+  storageKey: string,
+  options?: { filename?: string },
+) {
   return getSignedUrl(
     storageClient,
     new GetObjectCommand({
       Bucket: env.b2BucketName,
       Key: storageKey,
+      ResponseContentDisposition: buildDownloadDisposition(options?.filename),
     }),
     { expiresIn: 60 * 5 },
   );

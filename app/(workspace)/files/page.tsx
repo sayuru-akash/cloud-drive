@@ -338,7 +338,14 @@ export default async function FilesPage({
                     <div className="flex items-center gap-3 min-w-0">
                       <FileIcon mimeType={file.mimeType} className="h-5 w-5 shrink-0 text-ink-500" />
                       <div className="min-w-0">
-                        <p className="truncate font-medium text-ink-950">{file.displayName}</p>
+                        <a
+                          href={`/api/files/${file.id}/download`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="truncate font-medium text-ink-950 underline-offset-4 hover:underline"
+                        >
+                          {file.displayName}
+                        </a>
                         <p className="text-xs text-ink-500 lg:hidden">
                           {formatBytes(file.sizeBytes)} • {formatDate(file.updatedAt)}
                         </p>
@@ -356,12 +363,14 @@ export default async function FilesPage({
 
                     {/* Actions */}
                     <div className="flex items-center justify-end gap-2">
-                      <Link
+                      <a
                         href={`/api/files/${file.id}/download`}
+                        target="_blank"
+                        rel="noreferrer"
                         className="rounded-full border border-ink-300 px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-ink-500 hover:bg-white"
                       >
                         <Download className="h-3.5 w-3.5" />
-                      </Link>
+                      </a>
                       <form action={softDeleteFileAction} className="inline">
                         <input type="hidden" name="fileId" value={file.id} />
                         <button

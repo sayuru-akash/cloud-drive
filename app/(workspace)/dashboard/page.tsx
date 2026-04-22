@@ -172,12 +172,14 @@ export default async function DashboardPage() {
                   className="h-5 w-5 shrink-0 text-ink-500"
                 />
                 <div className="min-w-0 flex-1">
-                  <Link
+                  <a
                     href={`/api/files/${file.id}/download`}
+                    target="_blank"
+                    rel="noreferrer"
                     className="truncate font-medium text-ink-950 underline-offset-4 hover:underline"
                   >
                     {file.name}
-                  </Link>
+                  </a>
                   <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-500">
                     <span>{formatBytes(file.sizeBytes)}</span>
                     {file.folderId && file.folderName ? (
@@ -196,13 +198,15 @@ export default async function DashboardPage() {
                 <span className="hidden text-sm text-ink-500 sm:block">
                   {formatDate(file.updatedAt)}
                 </span>
-                <Link
+                <a
                   href={`/api/files/${file.id}/download`}
+                  target="_blank"
+                  rel="noreferrer"
                   className="inline-flex rounded-full border border-ink-300 p-2 text-ink-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-800"
                   aria-label={`Download ${file.name}`}
                 >
                   <Download className="h-4 w-4" />
-                </Link>
+                </a>
               </div>
             ))}
           </div>

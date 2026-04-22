@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { logAuditEvent } from "@/lib/audit";
 import { requireSession } from "@/lib/auth/session";
 import { canViewResource, getCurrentFileVersion, getFileRecord } from "@/lib/drive";
-import { createDownloadUrl } from "@/lib/storage";
+import { createDownloadUrlWithOptions } from "@/lib/storage";
 
 export async function GET(
   _request: Request,
@@ -32,7 +32,9 @@ export async function GET(
     return NextResponse.json({ error: "File version missing." }, { status: 404 });
   }
 
-  const url = await createDownloadUrl(version.storageKey);
+  const url = await createDownloadUrlWithOptions(version.storageKey, {
+    filename: file.displayName,
+  });
 
   await logAuditEvent({
     actorUserId: session.user.id,
