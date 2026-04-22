@@ -150,6 +150,8 @@ function buildDownloadDisposition(filename?: string) {
   const fallback = safeFilename
     .normalize("NFKD")
     .replace(/[^\x20-\x7E]+/g, "")
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .replace(/^_+|_+$/g, "")
     .trim() || "file";
 
   return `attachment; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(safeFilename || "file")}`;
