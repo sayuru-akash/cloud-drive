@@ -33,22 +33,6 @@ export default async function DashboardPage() {
         <p className="mt-3 max-w-2xl text-lg leading-8 text-ink-700">
           Here&apos;s what&apos;s happening in your workspace.
         </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Link
-            href="/files"
-            className="inline-flex items-center gap-2 rounded-full bg-ink-950 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-ink-800"
-          >
-            <Upload className="h-4 w-4" />
-            Upload files
-          </Link>
-          <Link
-            href="/shared"
-            className="inline-flex items-center gap-2 rounded-full border border-ink-300 px-5 py-2.5 text-sm font-medium text-ink-700 transition hover:border-ink-500 hover:bg-white"
-          >
-            <Link2 className="h-4 w-4" />
-            Shared links
-          </Link>
-        </div>
       </section>
 
       {/* Stats */}
