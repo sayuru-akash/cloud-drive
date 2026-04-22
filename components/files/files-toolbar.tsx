@@ -70,7 +70,7 @@ export function FilesToolbar({
   return (
     <div className="space-y-4">
       {/* Breadcrumbs + title + New button */}
-      <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur md:p-8">
+      <section className="relative z-10 rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur md:p-8">
         <nav className="flex flex-wrap items-center gap-2 text-sm text-ink-600">
           <Link
             href="/files"
