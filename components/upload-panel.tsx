@@ -36,12 +36,8 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
     );
   }
 
-  async function startUpload(uploadId: string) {
-    const upload = uploads.find((item) => item.id === uploadId);
-
-    if (!upload) {
-      return;
-    }
+  async function startUpload(upload: UploadState) {
+    const uploadId = upload.id;
 
     updateUpload(uploadId, (current) => ({
       ...current,
@@ -196,7 +192,7 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
 
     setUploads((current) => [...nextUploads, ...current]);
     nextUploads.forEach((item) => {
-      void Promise.resolve().then(() => startUpload(item.id));
+      void Promise.resolve().then(() => startUpload(item));
     });
   }
 
@@ -317,7 +313,7 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
                 {upload.status === "error" || upload.status === "cancelled" ? (
                   <button
                     type="button"
-                    onClick={() => void startUpload(upload.id)}
+                    onClick={() => void startUpload(upload)}
                     className="rounded-full border border-emerald-300 px-4 py-2 text-xs font-medium text-emerald-800 transition hover:bg-white"
                   >
                     Retry
