@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const securityHeaders = [
+const baseSecurityHeaders = [
   {
     key: "Referrer-Policy",
     value: "strict-origin-when-cross-origin",
@@ -8,10 +8,6 @@ const securityHeaders = [
   {
     key: "X-Content-Type-Options",
     value: "nosniff",
-  },
-  {
-    key: "X-Frame-Options",
-    value: "DENY",
   },
   {
     key: "Permissions-Policy",
@@ -31,6 +27,24 @@ const securityHeaders = [
   },
 ];
 
+const denyFramingHeaders = [
+  {
+    key: "X-Frame-Options",
+    value: "DENY",
+  },
+];
+
+const sameOriginPreviewHeaders = [
+  {
+    key: "X-Frame-Options",
+    value: "SAMEORIGIN",
+  },
+  {
+    key: "Content-Security-Policy",
+    value: "frame-ancestors 'self';",
+  },
+];
+
 const nextConfig: NextConfig = {
   typedRoutes: true,
   poweredByHeader: false,
@@ -40,8 +54,12 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source: "/api/public-share/:token/preview",
+        headers: [...baseSecurityHeaders, ...sameOriginPreviewHeaders],
+      },
+      {
         source: "/:path*",
-        headers: securityHeaders,
+        headers: [...baseSecurityHeaders, ...denyFramingHeaders],
       },
     ];
   },
