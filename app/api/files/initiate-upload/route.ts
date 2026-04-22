@@ -14,8 +14,10 @@ import {
   createUploadUrl,
 } from "@/lib/storage";
 
-const MULTIPART_THRESHOLD_BYTES = 100 * 1024 * 1024;
-const MULTIPART_CHUNK_SIZE_BYTES = 64 * 1024 * 1024;
+export const maxDuration = 60;
+
+const MULTIPART_THRESHOLD_BYTES = 500 * 1024 * 1024;
+const MULTIPART_CHUNK_SIZE_BYTES = 500 * 1024 * 1024;
 
 const initiateUploadSchema = z.object({
   folderId: z.string().nullable().optional(),

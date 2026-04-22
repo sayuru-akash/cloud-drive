@@ -7,6 +7,8 @@ import { uploads } from "@/lib/db/schema";
 import { canEditResource, getFileRecord } from "@/lib/drive";
 import { createMultipartPartUploadUrl } from "@/lib/storage";
 
+export const maxDuration = 60;
+
 const multipartPartSchema = z.object({
   multipartUploadId: z.string().min(1),
   partNumber: z.number().int().positive().max(10000),

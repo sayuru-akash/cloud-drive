@@ -8,6 +8,8 @@ import { files, uploads } from "@/lib/db/schema";
 import { canEditResource, getFileRecord } from "@/lib/drive";
 import { abortMultipartUpload } from "@/lib/storage";
 
+export const maxDuration = 60;
+
 const cancelUploadSchema = z
   .object({
     multipartUploadId: z.string().min(1).optional(),

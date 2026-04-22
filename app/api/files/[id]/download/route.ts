@@ -4,6 +4,8 @@ import { requireSession } from "@/lib/auth/session";
 import { canViewResource, getCurrentFileVersion, getFileRecord } from "@/lib/drive";
 import { createDownloadUrlWithOptions } from "@/lib/storage";
 
+export const maxDuration = 60;
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },

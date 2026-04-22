@@ -10,6 +10,8 @@ import { env } from "@/lib/env";
 import { createId } from "@/lib/ids";
 import { completeMultipartUpload, getStoredObject } from "@/lib/storage";
 
+export const maxDuration = 60;
+
 const completeUploadSchema = z
   .object({
     uploadStrategy: z.enum(["single", "multipart"]).optional(),
