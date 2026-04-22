@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Upload } from "lucide-react";
 
 type UploadPanelProps = {
   folderId: string | null;
@@ -43,7 +44,7 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
       ...current,
       status: "uploading",
       progress: 0,
-      message: "Requesting signed upload URL.",
+      message: "Starting upload...",
     }));
 
     try {
@@ -71,8 +72,8 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
         displayName: initJson.displayName ?? current.displayName,
         message:
           initJson.displayName && initJson.displayName !== current.file.name
-            ? `Stored as ${initJson.displayName} to avoid a duplicate name.`
-            : "Uploading to Backblaze B2.",
+            ? `Saved as ${initJson.displayName}`
+            : "Uploading...",
       }));
 
       await new Promise<void>((resolve, reject) => {
@@ -125,7 +126,7 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
         ...current,
         status: "finalizing",
         progress: 100,
-        message: "Verifying object and finalizing metadata.",
+        message: "Finalizing...",
       }));
 
       const completeRes = await fetch(`/api/files/${initJson.fileId}/complete-upload`, {
@@ -141,7 +142,7 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
         ...current,
         status: "done",
         progress: 100,
-        message: "Upload complete.",
+        message: "Done",
       }));
 
       router.refresh();
@@ -169,7 +170,7 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
     updateUpload(upload.id, (current) => ({
       ...current,
       status: "cancelled",
-      message: "Upload cancelled.",
+      message: "Cancelled",
     }));
 
     router.refresh();
@@ -204,14 +205,15 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
             Uploads
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-ink-950">
-            Direct browser upload to Backblaze B2
+            Upload files
           </h2>
         </div>
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="rounded-full bg-ink-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-ink-800"
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-ink-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-ink-800"
         >
+          <Upload className="h-4 w-4" />
           Select files
         </button>
       </div>
@@ -242,27 +244,18 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
             queueFiles(event.dataTransfer.files);
           }
         }}
-        className={`mt-6 rounded-[1.5rem] border border-dashed p-5 transition ${
+        className={`mt-6 rounded-[1.5rem] border border-dashed p-6 text-center transition ${
           isDragActive
             ? "border-emerald-500 bg-emerald-50"
             : "border-ink-200 bg-surface-strong"
         }`}
       >
-        <p className="text-sm leading-7 text-ink-600">
-          Drag and drop files here, or use the picker above. Uploads use
-          short-lived signed PUT URLs, show live progress, and can be cancelled
-          or retried before finalization.
+        <p className="text-sm text-ink-600">
+          Drag and drop files here, or use the button above.
         </p>
       </div>
 
       <div className="mt-6 space-y-4">
-        {uploads.length === 0 ? (
-          <p className="text-sm leading-7 text-ink-600">
-            Your Backblaze B2 bucket must allow your app origin in its CORS
-            rules for browser-direct uploads.
-          </p>
-        ) : null}
-
         {uploads.map((upload) => (
           <article
             key={upload.id}
@@ -272,7 +265,7 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
               <div className="min-w-0">
                 <p className="truncate font-medium text-ink-950">{upload.displayName}</p>
                 <p className="mt-1 text-xs text-ink-500">
-                  {upload.file.name} • {upload.file.size.toLocaleString()} bytes
+                  {upload.file.name} • {(upload.file.size / 1024 / 1024).toFixed(1)} MB
                 </p>
               </div>
               <p className="text-sm text-ink-600">{upload.progress}%</p>
@@ -293,12 +286,12 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
               <p className="text-sm text-ink-600">
                 {upload.message ??
                   (upload.status === "queued"
-                    ? "Waiting to start."
+                    ? "Waiting..."
                     : upload.status === "finalizing"
-                      ? "Verifying upload."
+                      ? "Finalizing..."
                       : upload.status === "done"
-                        ? "Upload complete."
-                        : "Uploading.")}
+                        ? "Done"
+                        : "Uploading...")}
               </p>
               <div className="flex gap-2">
                 {upload.status === "uploading" || upload.status === "finalizing" ? (

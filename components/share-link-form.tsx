@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Link2 } from "lucide-react";
 import { createShareLinkAction } from "@/app/(workspace)/files/actions";
 
 type ShareLinkFormProps = {
@@ -27,30 +28,35 @@ export function ShareLinkForm({ fileId }: ShareLinkFormProps) {
           defaultValue="view"
           className="rounded-2xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900"
         >
-          <option value="view">View link</option>
-          <option value="download">Download link</option>
+          <option value="view">View only</option>
+          <option value="download">Download</option>
         </select>
-        <input
-          name="expiryDays"
-          type="number"
-          min={1}
-          max={90}
-          defaultValue={7}
-          className="w-28 rounded-2xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900"
-        />
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-ink-600">Expires in</span>
+          <input
+            name="expiryDays"
+            type="number"
+            min={1}
+            max={90}
+            defaultValue={7}
+            className="w-20 rounded-2xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900"
+          />
+          <span className="text-sm text-ink-600">days</span>
+        </div>
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-full border border-emerald-700/20 bg-emerald-700/8 px-4 py-3 text-sm font-medium text-emerald-800 transition hover:bg-emerald-700/15 disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-2 rounded-full border border-emerald-700/20 bg-emerald-700/8 px-4 py-3 text-sm font-medium text-emerald-800 transition hover:bg-emerald-700/15 disabled:opacity-60"
         >
-          {isPending ? "Creating..." : "Create share link"}
+          <Link2 className="h-4 w-4" />
+          {isPending ? "Creating..." : "Create link"}
         </button>
       </div>
 
       <input
         name="notifyEmail"
         type="email"
-        placeholder="Optional email notification"
+        placeholder="Notify by email (optional)"
         className="rounded-2xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900"
       />
 
@@ -58,7 +64,7 @@ export function ShareLinkForm({ fileId }: ShareLinkFormProps) {
         <p className="text-sm text-red-700">{state.error}</p>
       ) : state.url ? (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          <p className="font-medium">Share link created</p>
+          <p className="font-medium">Link created</p>
           <div className="mt-2 flex flex-col gap-2 md:flex-row md:items-center">
             <code className="min-w-0 flex-1 overflow-x-auto rounded-xl bg-white px-3 py-2 text-xs text-ink-800">
               {state.url}

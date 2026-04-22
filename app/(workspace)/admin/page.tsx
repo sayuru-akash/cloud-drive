@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import { desc } from "drizzle-orm";
 import {
+  Activity,
+  CheckCircle2,
+  Link2,
+  Users,
+  XCircle,
+} from "lucide-react";
+import {
   updateAppSettingsAction,
   updateUserRoleAction,
   updateUserStatusAction,
@@ -9,6 +16,7 @@ import { requireAdminSession } from "@/lib/auth/session";
 import { getAppSettings } from "@/lib/app-settings";
 import { db } from "@/lib/db/client";
 import { auditLogs, shareLinks, users } from "@/lib/db/schema";
+import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -54,88 +62,149 @@ export default async function AdminPage() {
       .limit(10),
   ]);
 
+  const activeUsers = userRows.filter((u) => u.isActive !== false).length;
+  const activeLinks = shareRows.filter((s) => !s.isRevoked).length;
+
   return (
     <main className="space-y-6">
+      {/* Header */}
       <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur md:p-8">
         <p className="text-sm uppercase tracking-[0.24em] text-ink-500">
-          Admin controls
+          Administration
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-ink-950 sm:text-4xl">
-          Users, policy settings, share links, and audit visibility live here.
+          Workspace management
         </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-ink-700 sm:text-base sm:leading-8">
-          This route is restricted to `admin` and `super_admin` sessions with
-          server-side enforcement on every request.
+        <p className="mt-2 text-lg leading-8 text-ink-700">
+          {userRows.length} users • {activeLinks} active links
         </p>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+      {/* Stats */}
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <article className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
-          <h2 className="text-2xl font-semibold tracking-[-0.04em] text-ink-950">
-            Users
-          </h2>
-          <div className="mt-5 space-y-4">
-            {userRows.map((user) => (
-              <div key={user.id} className="rounded-[1.5rem] border border-ink-200/80 bg-surface-strong p-4">
-                <div className="flex flex-col gap-4">
-                  <div>
-                    <p className="font-medium text-ink-950">{user.name}</p>
-                    <p className="mt-1 text-sm text-ink-600">{user.email}</p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-ink-500">
-                      {user.isActive === false ? "disabled" : "active"}
-                    </p>
-                  </div>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <form action={updateUserRoleAction} className="flex flex-col gap-2 sm:flex-row">
-                      <input type="hidden" name="userId" value={user.id} />
-                      <select
-                        name="role"
-                        defaultValue={user.role ?? "member"}
-                        className="flex-1 rounded-2xl border border-ink-200 bg-white px-4 py-2 text-sm text-ink-900"
-                      >
-                        <option value="member">member</option>
-                        <option value="admin">admin</option>
-                        <option value="super_admin">super_admin</option>
-                      </select>
-                      <button
-                        type="submit"
-                        className="rounded-full bg-ink-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-ink-800"
-                      >
-                        Save role
-                      </button>
-                    </form>
-
-                    <form action={updateUserStatusAction} className="flex flex-col gap-2 sm:flex-row">
-                      <input type="hidden" name="userId" value={user.id} />
-                      <select
-                        name="isActive"
-                        defaultValue={user.isActive === false ? "false" : "true"}
-                        className="flex-1 rounded-2xl border border-ink-200 bg-white px-4 py-2 text-sm text-ink-900"
-                      >
-                        <option value="true">active</option>
-                        <option value="false">disabled</option>
-                      </select>
-                      <button
-                        type="submit"
-                        className="rounded-full border border-ink-300 px-4 py-2 text-sm font-medium text-ink-700 transition hover:border-ink-500 hover:bg-white"
-                      >
-                        Save status
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <Users className="h-5 w-5 text-ink-400" />
+          <p className="mt-3 text-sm text-ink-500">Total users</p>
+          <p className="mt-1 text-xl font-semibold tracking-[-0.03em] text-ink-950">
+            {userRows.length}
+          </p>
         </article>
-
         <article className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
-          <h2 className="text-2xl font-semibold tracking-[-0.04em] text-ink-950">
-            System settings
-          </h2>
-          <form action={updateAppSettingsAction} className="mt-5 space-y-4">
+          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+          <p className="mt-3 text-sm text-ink-500">Active users</p>
+          <p className="mt-1 text-xl font-semibold tracking-[-0.03em] text-ink-950">
+            {activeUsers}
+          </p>
+        </article>
+        <article className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
+          <Link2 className="h-5 w-5 text-ink-400" />
+          <p className="mt-3 text-sm text-ink-500">Active links</p>
+          <p className="mt-1 text-xl font-semibold tracking-[-0.03em] text-ink-950">
+            {activeLinks}
+          </p>
+        </article>
+        <article className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
+          <Activity className="h-5 w-5 text-ink-400" />
+          <p className="mt-3 text-sm text-ink-500">Recent events</p>
+          <p className="mt-1 text-xl font-semibold tracking-[-0.03em] text-ink-950">
+            {auditRows.length}
+          </p>
+        </article>
+      </section>
+
+      {/* Users table */}
+      <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-5 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur sm:p-6">
+        <h2 className="text-xl font-semibold tracking-[-0.04em] text-ink-950">
+          Users
+        </h2>
+
+        <div className="mt-5 overflow-x-auto">
+          <div className="min-w-[44rem]">
+            {/* Header */}
+            <div className="grid grid-cols-[1fr_1fr_7rem_6rem_8rem] gap-4 px-4 pb-2 text-xs uppercase tracking-[0.18em] text-ink-500">
+              <span>Name</span>
+              <span>Email</span>
+              <span>Role</span>
+              <span>Status</span>
+              <span className="text-right">Joined</span>
+            </div>
+
             <div className="space-y-2">
-              <label className="text-sm font-medium text-ink-800" htmlFor="maxUploadSizeBytes">
+              {userRows.map((user) => (
+                <div
+                  key={user.id}
+                  className="grid grid-cols-[1fr_1fr_7rem_6rem_8rem] items-center gap-4 rounded-[1.25rem] border border-ink-200/60 bg-white/70 px-4 py-3"
+                >
+                  <p className="truncate font-medium text-ink-950">
+                    {user.name}
+                  </p>
+                  <p className="truncate text-sm text-ink-600">{user.email}</p>
+
+                  <form
+                    action={updateUserRoleAction}
+                    className="flex items-center gap-2"
+                  >
+                    <input type="hidden" name="userId" value={user.id} />
+                    <select
+                      name="role"
+                      defaultValue={user.role ?? "member"}
+                      className="rounded-xl border border-ink-200 bg-white px-2 py-1.5 text-xs text-ink-900"
+                      onChange={(e) => {
+                        e.currentTarget.form?.requestSubmit();
+                      }}
+                    >
+                      <option value="member">Member</option>
+                      <option value="admin">Admin</option>
+                      <option value="super_admin">Super admin</option>
+                    </select>
+                  </form>
+
+                  <form
+                    action={updateUserStatusAction}
+                    className="flex items-center gap-2"
+                  >
+                    <input type="hidden" name="userId" value={user.id} />
+                    <select
+                      name="isActive"
+                      defaultValue={
+                        user.isActive === false ? "false" : "true"
+                      }
+                      className="rounded-xl border border-ink-200 bg-white px-2 py-1.5 text-xs text-ink-900"
+                      onChange={(e) => {
+                        e.currentTarget.form?.requestSubmit();
+                      }}
+                    >
+                      <option value="true">Active</option>
+                      <option value="false">Disabled</option>
+                    </select>
+                  </form>
+
+                  <span className="text-right text-sm text-ink-500">
+                    {formatDate(user.createdAt)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Settings + Audit + Shares */}
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        {/* System settings */}
+        <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
+          <h2 className="text-xl font-semibold tracking-[-0.04em] text-ink-950">
+            Workspace settings
+          </h2>
+          <form
+            action={updateAppSettingsAction}
+            className="mt-5 space-y-4"
+          >
+            <div className="space-y-2">
+              <label
+                className="text-sm font-medium text-ink-800"
+                htmlFor="maxUploadSizeBytes"
+              >
                 Max upload size (bytes)
               </label>
               <input
@@ -148,8 +217,11 @@ export default async function AdminPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-ink-800" htmlFor="defaultSoftDeleteRetentionDays">
-                Soft-delete retention (days)
+              <label
+                className="text-sm font-medium text-ink-800"
+                htmlFor="defaultSoftDeleteRetentionDays"
+              >
+                Trash retention (days)
               </label>
               <input
                 id="defaultSoftDeleteRetentionDays"
@@ -162,7 +234,10 @@ export default async function AdminPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-ink-800" htmlFor="defaultShareExpiryDays">
+              <label
+                className="text-sm font-medium text-ink-800"
+                htmlFor="defaultShareExpiryDays"
+              >
                 Default share expiry (days)
               </label>
               <input
@@ -176,14 +251,17 @@ export default async function AdminPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-ink-800" htmlFor="blockedFileExtensions">
+              <label
+                className="text-sm font-medium text-ink-800"
+                htmlFor="blockedFileExtensions"
+              >
                 Blocked file extensions
               </label>
               <textarea
                 id="blockedFileExtensions"
                 name="blockedFileExtensions"
                 defaultValue={settings.blockedFileExtensions.join(", ")}
-                rows={5}
+                rows={4}
                 className="w-full rounded-2xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900"
               />
             </div>
@@ -194,51 +272,84 @@ export default async function AdminPage() {
               Save settings
             </button>
           </form>
-        </article>
-      </section>
+        </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <article className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
-          <h2 className="text-2xl font-semibold tracking-[-0.04em] text-ink-950">
-            Audit trail
-          </h2>
-          <div className="mt-5 space-y-4">
-            {auditRows.map((row) => (
-              <div key={row.id} className="border-t border-ink-200/80 pt-4 first:border-none first:pt-0">
-                <p className="font-medium text-ink-950">{row.actionType}</p>
-                <p className="mt-1 text-sm text-ink-600">
-                  {row.actorEmail ?? "system"} • {row.resourceType ?? "resource"}
-                </p>
-                <p className="mt-2 font-mono text-xs text-ink-500">
-                  {new Date(row.createdAt).toLocaleString()}
-                </p>
-              </div>
-            ))}
-          </div>
-        </article>
+        <div className="space-y-6">
+          {/* Audit trail */}
+          <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
+            <h2 className="text-xl font-semibold tracking-[-0.04em] text-ink-950">
+              Audit trail
+            </h2>
+            <div className="mt-5 space-y-2">
+              {auditRows.length === 0 ? (
+                <p className="text-sm text-ink-600">No events yet.</p>
+              ) : (
+                auditRows.map((row) => (
+                  <div
+                    key={row.id}
+                    className="flex items-start justify-between gap-4 rounded-[1.25rem] border border-ink-200/60 bg-white/70 px-4 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-ink-950">
+                        {row.actionType}
+                      </p>
+                      <p className="mt-0.5 text-xs text-ink-500">
+                        {row.actorEmail ?? "system"} •{" "}
+                        {row.resourceType ?? "resource"}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-xs text-ink-400">
+                      {formatDate(row.createdAt)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
 
-        <article className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
-          <h2 className="text-2xl font-semibold tracking-[-0.04em] text-ink-950">
-            Recent share links
-          </h2>
-          <div className="mt-5 space-y-4">
-            {shareRows.map((row) => (
-              <div key={row.id} className="rounded-[1.25rem] border border-ink-200 bg-surface-strong p-4">
-                <p className="font-medium text-ink-950">{row.mode}</p>
-                <p className="mt-1 text-sm text-ink-600">
-                  {row.isRevoked ? "Revoked" : "Active"} •{" "}
-                  {row.expiresAt
-                    ? `Expires ${new Date(row.expiresAt).toLocaleString()}`
-                    : "No expiry"}
-                </p>
-                <p className="mt-2 font-mono text-xs text-ink-500">
-                  Created {new Date(row.createdAt).toLocaleString()}
-                </p>
-              </div>
-            ))}
-          </div>
-        </article>
-      </section>
+          {/* Recent share links */}
+          <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
+            <h2 className="text-xl font-semibold tracking-[-0.04em] text-ink-950">
+              Recent share links
+            </h2>
+            <div className="mt-5 space-y-2">
+              {shareRows.length === 0 ? (
+                <p className="text-sm text-ink-600">No links yet.</p>
+              ) : (
+                shareRows.map((row) => (
+                  <div
+                    key={row.id}
+                    className="flex items-center justify-between gap-4 rounded-[1.25rem] border border-ink-200/60 bg-white/70 px-4 py-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      {row.isRevoked ? (
+                        <XCircle className="h-4 w-4 text-ink-400" />
+                      ) : (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium text-ink-950 capitalize">
+                          {row.mode}
+                        </p>
+                        <p className="text-xs text-ink-500">
+                          {row.isRevoked
+                            ? "Revoked"
+                            : row.expiresAt
+                              ? `Expires ${formatDate(row.expiresAt)}`
+                              : "No expiry"}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs text-ink-400">
+                      {formatDate(row.createdAt)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        </div>
+      </div>
     </main>
   );
 }

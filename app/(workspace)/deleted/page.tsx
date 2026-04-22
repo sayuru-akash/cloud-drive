@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
 import {
+  AlertTriangle,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
+import {
   hardDeleteResourceAction,
   restoreResourceAction,
 } from "@/app/(workspace)/files/actions";
@@ -7,6 +12,7 @@ import { requireSession } from "@/lib/auth/session";
 import { getAppSettings } from "@/lib/app-settings";
 import { getDeletedResources } from "@/lib/drive";
 import { canManageAdmin } from "@/lib/drive";
+import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Deleted Items",
@@ -20,61 +26,109 @@ export default async function DeletedPage() {
 
   return (
     <main className="space-y-6">
+      {/* Header */}
       <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur md:p-8">
         <p className="text-sm uppercase tracking-[0.24em] text-ink-500">
-          Deleted items
+          Trash
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-ink-950 sm:text-4xl">
-          Soft delete keeps resources out of circulation without immediate loss.
+          Deleted items
         </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-ink-700 sm:text-base sm:leading-8">
-          The current retention default is {settings.defaultSoftDeleteRetentionDays} days.
+        <p className="mt-2 text-lg leading-8 text-ink-700">
+          {rows.length === 0
+            ? "Trash is empty."
+            : `${rows.length} item${rows.length === 1 ? "" : "s"} • Auto-deleted after ${settings.defaultSoftDeleteRetentionDays} days`}
         </p>
       </section>
 
+      {/* Deleted items list */}
       <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-5 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur sm:p-6">
         {rows.length === 0 ? (
-          <p className="text-sm leading-7 text-ink-600">
-            Nothing is currently deleted.
-          </p>
+          <div className="py-12 text-center">
+            <Trash2 className="mx-auto h-8 w-8 text-ink-300" />
+            <p className="mt-4 text-lg font-medium text-ink-950">
+              Nothing here
+            </p>
+            <p className="mt-2 text-sm text-ink-600">
+              Deleted files and folders show up here before they are permanently removed.
+            </p>
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-2">
+            {/* Table header */}
+            <div className="hidden grid-cols-[1fr_6rem_10rem_10rem] gap-4 px-4 pb-2 text-xs uppercase tracking-[0.18em] text-ink-500 lg:grid">
+              <span>Name</span>
+              <span>Type</span>
+              <span>Deleted</span>
+              <span className="text-right">Actions</span>
+            </div>
+
             {rows.map((item) => (
-              <article key={`${item.type}-${item.id}`} className="rounded-[1.5rem] border border-ink-200/80 bg-surface-strong p-4">
-                <div className="flex flex-col gap-4">
-                  <div>
-                    <p className="font-medium text-ink-950">{item.name}</p>
-                    <p className="mt-1 text-sm text-ink-600">
-                      {item.type} • Deleted{" "}
-                      {item.deletedAt ? new Date(item.deletedAt).toLocaleString() : "recently"}
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                    <form action={restoreResourceAction}>
-                      <input type="hidden" name="resourceType" value={item.type} />
-                      <input type="hidden" name="resourceId" value={item.id} />
+              <div
+                key={`${item.type}-${item.id}`}
+                className="group grid items-center gap-4 rounded-[1.25rem] border border-ink-200/60 bg-white/70 px-4 py-3 transition hover:border-ink-300 hover:bg-white lg:grid-cols-[1fr_6rem_10rem_10rem]"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-ink-950">
+                    {item.name}
+                  </p>
+                  <p className="text-xs text-ink-500 lg:hidden capitalize">
+                    {item.type} • Deleted {formatDate(item.deletedAt)}
+                  </p>
+                </div>
+
+                <span className="hidden text-sm capitalize text-ink-500 lg:block">
+                  {item.type}
+                </span>
+
+                <span className="hidden text-sm text-ink-500 lg:block">
+                  {formatDate(item.deletedAt)}
+                </span>
+
+                <div className="flex items-center justify-end gap-2">
+                  <form action={restoreResourceAction}>
+                    <input
+                      type="hidden"
+                      name="resourceType"
+                      value={item.type}
+                    />
+                    <input
+                      type="hidden"
+                      name="resourceId"
+                      value={item.id}
+                    />
+                    <button
+                      type="submit"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-ink-300 px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-800"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Restore
+                    </button>
+                  </form>
+
+                  {canHardDelete && (
+                    <form action={hardDeleteResourceAction}>
+                      <input
+                        type="hidden"
+                        name="resourceType"
+                        value={item.type}
+                      />
+                      <input
+                        type="hidden"
+                        name="resourceId"
+                        value={item.id}
+                      />
                       <button
                         type="submit"
-                        className="w-full rounded-full bg-ink-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-ink-800 sm:w-auto"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-50"
                       >
-                        Restore
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                        Delete
                       </button>
                     </form>
-                    {canHardDelete ? (
-                      <form action={hardDeleteResourceAction}>
-                        <input type="hidden" name="resourceType" value={item.type} />
-                        <input type="hidden" name="resourceId" value={item.id} />
-                        <button
-                          type="submit"
-                          className="w-full rounded-full border border-red-200 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 sm:w-auto"
-                        >
-                          Hard delete
-                        </button>
-                      </form>
-                    ) : null}
-                  </div>
+                  )}
                 </div>
-              </article>
+              </div>
             ))}
           </div>
         )}

@@ -23,7 +23,7 @@ const items: ReadonlyArray<{
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/files", label: "Files", icon: FolderKanban },
   { href: "/shared", label: "Shared", icon: Link2 },
-  { href: "/deleted", label: "Deleted", icon: Trash2 },
+  { href: "/deleted", label: "Trash", icon: Trash2 },
   { href: "/settings", label: "Settings", icon: Settings2 },
   { href: "/admin", label: "Admin", icon: Shield },
 ];
@@ -34,15 +34,10 @@ export function WorkspaceNav() {
 
   return (
     <>
+      {/* Mobile nav */}
       <div className="mb-4 flex flex-col gap-4 rounded-[1.75rem] border border-ink-200/80 bg-white/78 p-4 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur lg:hidden">
         <div className="flex items-center justify-between gap-4">
-          <BrandMark />
-          <Link
-            href="/api/health"
-            className="rounded-full border border-ink-300 px-3 py-2 text-xs font-medium text-ink-700 transition hover:border-ink-500 hover:bg-white"
-          >
-            Health
-          </Link>
+          <BrandMark variant="minimal" />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
           {items.map(({ href, label, icon: Icon }) => {
@@ -68,9 +63,10 @@ export function WorkspaceNav() {
         </div>
       </div>
 
+      {/* Desktop nav */}
       <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] w-72 shrink-0 flex-col rounded-[2rem] border border-ink-200/80 bg-white/78 p-5 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur lg:flex">
-        <BrandMark />
-        <div className="mt-10 space-y-2">
+        <BrandMark variant="minimal" />
+        <div className="mt-10 space-y-1">
           {items.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
 
@@ -98,7 +94,7 @@ export function WorkspaceNav() {
           })}
         </div>
 
-        <div className="mt-6 rounded-[1.5rem] border border-ink-200/80 bg-white p-4">
+        <div className="mt-auto rounded-[1.5rem] border border-ink-200/80 bg-white p-4">
           <p className="text-sm font-medium text-ink-950">
             {session?.user?.name ?? "Workspace user"}
           </p>
@@ -111,14 +107,6 @@ export function WorkspaceNav() {
           <div className="mt-4">
             <SignOutButton />
           </div>
-        </div>
-
-        <div className="mt-auto rounded-[1.5rem] border border-ink-200/80 bg-[linear-gradient(180deg,rgba(25,122,104,0.08),rgba(25,122,104,0.02))] p-4">
-          <p className="text-sm font-medium text-ink-950">Foundation status</p>
-          <p className="mt-2 text-sm leading-7 text-ink-600">
-            Auth, uploads, password recovery, and database-backed workspace
-            policy are active.
-          </p>
         </div>
       </aside>
     </>

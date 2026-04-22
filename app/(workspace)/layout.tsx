@@ -4,7 +4,7 @@ import { WorkspaceNav } from "@/components/workspace-nav";
 
 export const metadata: Metadata = {
   title: "Workspace",
-  description: "Operational workspace for files, sharing, deleted items, and admin controls.",
+  description: "Your Cloud Drive workspace.",
 };
 
 export default async function WorkspaceLayout({
