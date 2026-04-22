@@ -6,7 +6,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Project Overview
 
-Cloud Drive is a workspace file-management platform built with Next.js 16 and React 19. It provides Google Drive-like functionality for teams: folder hierarchies, file uploads (including multipart for large files), visibility controls, shareable links, soft-delete with retention, admin dashboards, and audit logging. Files are stored on Backblaze B2 via presigned URLs; metadata lives in Neon PostgreSQL.
+Cloud Drive is a workspace file-management platform built with Next.js 16 and React 19. It provides folder hierarchies, direct browser uploads to Backblaze B2, download-only share links, soft-delete with retention, admin controls, and a full audit trail. Files are stored on Backblaze B2 via presigned URLs; metadata lives in Neon PostgreSQL.
 
 ## Repository Structure
 
@@ -16,7 +16,9 @@ Cloud Drive is a workspace file-management platform built with Next.js 16 and Re
   - `login/`, `forgot-password/`, `reset-password/`, `privacy/` — Public pages
 - `components/` — React components
   - `files/` — File-explorer UI (toolbar, content grid/list, dialogs, selection hooks)
-  - `upload-queue.tsx`, `upload-trigger.tsx` — Floating upload progress & trigger
+  - `upload-queue.tsx` — Floating upload progress panel
+  - `action-ui.tsx` — Global pending overlay + confirm dialog system
+  - `route-loading-screen.tsx` — Shared page-loading treatment
 - `hooks/` — Client hooks (`use-upload-queue.ts`)
 - `lib/` — Core business logic
   - `db/schema/` — Drizzle ORM schema (auth, drive, audit, settings)
@@ -91,6 +93,11 @@ npx drizzle-kit migrate
   2. Backend returns presigned URL (single PUT) or multipart upload ID
   3. Client uploads bytes **directly to B2** (never through Vercel)
   4. Client calls `POST /api/files/{id}/complete-upload` → finalizes DB state
+- **File download flow**:
+  1. App route validates access
+  2. App returns a redirect to a signed B2 download URL
+  3. Backblaze serves the file directly with attachment headers
+- **Share model**: public shares are download-only; file preview routes are not part of the product
 - **Permissions**: `canEditResource`, `canDeleteResource`, `canShareResource` helpers check ownership + role
 - **Soft delete**: Files/folders marked `isDeleted` with retention window; admins can hard-delete
 
@@ -138,7 +145,6 @@ npm run test:e2e:ui
 | **API Routes** | `app/api/files/[id]/complete-upload/route.test.ts` | Single/multipart completion, 404, 403, 400 cases |
 | **API Routes** | `app/api/files/[id]/cancel-upload/route.test.ts` | Cancel success, 404, 403, no-pending-upload |
 | **API Routes** | `app/api/files/[id]/download/route.test.ts` | Presigned redirect, 404, 403, deleted, missing version |
-| **API Routes** | `app/api/files/[id]/preview/route.test.ts` | Stream headers, 404, 403, missing version, unreadable body |
 | **E2E** | `e2e/public-pages.spec.ts` | Public page loads, health endpoint |
 
 ### Test Patterns
@@ -160,7 +166,7 @@ npm run test:e2e:ui
 - **Secrets**: Managed via `.env` (never commit); validated in `lib/env.ts` with Zod
 - **Auth secret**: `BETTER_AUTH_SECRET` must be ≥ 32 characters
 - **Upload limits**: `MAX_UPLOAD_SIZE_BYTES` (default 10 GB); blocked extensions checked in `initiate-upload`
-- **Share links**: Token-based with expiry (default 7 days), optional password, optional email notification
+- **Share links**: Token-based, download-only, expiry default 7 days, optional email notification
 - **Audit logging**: All file/folder CRUD, share create/revoke, and permission changes are logged
 - **Dependency scanning**: Run `npm audit` regularly; add to CI when a GitHub Actions workflow is created
 
@@ -173,7 +179,7 @@ npm run test:e2e:ui
 - **Review required** for: auth logic, permission checks, database schema changes, storage key logic
 - **Do not** add new environment variables without updating `.env.example` and `lib/env.ts`
 - **Do not** use `any`; strict TypeScript is enforced
-- **Preserve** the design system: warm beige, emerald accent, glassmorphism, rounded-[2rem], no gradients/shadows
+- **Preserve** the existing visual language: warm beige, emerald accent, glassmorphism, rounded-[2rem], restrained copy, and the shared action/loading treatment
 
 ## Extensibility Hooks
 
@@ -182,6 +188,7 @@ npm run test:e2e:ui
 - **Retention days**: `DEFAULT_SOFT_DELETE_RETENTION_DAYS` env var + `app_settings` override
 - **Email domain restrictions**: `INTERNAL_EMAIL_DOMAIN` env var
 - **Storage provider**: Abstracted in `lib/storage.ts`; swapping B2 for S3-compatible provider requires only endpoint/credential changes
+- **Upload limits**: env default is 10 GB; admin-configurable limit is capped at 50 GB
 
 ## Further Reading
 

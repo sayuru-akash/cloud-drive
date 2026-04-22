@@ -24,6 +24,7 @@ import { NewFolderDialog } from "./new-folder-dialog";
 import { UploadQueue } from "@/components/upload-queue";
 import { useUploadQueue } from "@/hooks/use-upload-queue";
 import type { FileAction } from "./file-actions-menu";
+import { useActionConfirm, useActionRunner } from "@/components/action-ui";
 
 type FolderItem = {
   id: string;
@@ -71,6 +72,8 @@ export function FilesShell({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const runAction = useActionRunner();
+  const confirm = useActionConfirm();
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [moveOpen, setMoveOpen] = useState(false);
@@ -114,16 +117,18 @@ export function FilesShell({
     value: string,
   ) {
     try {
-      const formData = new FormData();
-      formData.append(type === "file" ? "fileId" : "folderId", id);
-      formData.append("name", value);
-      if (type === "file") {
-        await renameFileAction(formData);
-      } else {
-        await renameFolderAction(formData);
-      }
-      setRenamingId(null);
-      router.refresh();
+      await runAction("Saving changes", async () => {
+        const formData = new FormData();
+        formData.append(type === "file" ? "fileId" : "folderId", id);
+        formData.append("name", value);
+        if (type === "file") {
+          await renameFileAction(formData);
+        } else {
+          await renameFolderAction(formData);
+        }
+        setRenamingId(null);
+        router.refresh();
+      });
     } catch (e) {
       console.error("Rename failed:", e);
     }
@@ -137,15 +142,17 @@ export function FilesShell({
           : folders.find((f) => f.id === id);
       if (!item) return;
       const next = item.visibility === "private" ? "workspace" : "private";
-      const formData = new FormData();
-      formData.append(type === "file" ? "fileId" : "folderId", id);
-      formData.append("visibility", next);
-      if (type === "file") {
-        await updateFileVisibilityAction(formData);
-      } else {
-        await updateFolderVisibilityAction(formData);
-      }
-      router.refresh();
+      await runAction("Updating access", async () => {
+        const formData = new FormData();
+        formData.append(type === "file" ? "fileId" : "folderId", id);
+        formData.append("visibility", next);
+        if (type === "file") {
+          await updateFileVisibilityAction(formData);
+        } else {
+          await updateFolderVisibilityAction(formData);
+        }
+        router.refresh();
+      });
     } catch (e) {
       console.error("Visibility update failed:", e);
     }
@@ -153,14 +160,30 @@ export function FilesShell({
 
   async function handleDelete(id: string, type: "file" | "folder") {
     try {
-      const formData = new FormData();
-      formData.append(type === "file" ? "fileId" : "folderId", id);
-      if (type === "file") {
-        await softDeleteFileAction(formData);
-      } else {
-        await softDeleteFolderAction(formData);
+      const accepted = await confirm({
+        title: type === "file" ? "Delete file?" : "Delete folder?",
+        description:
+          type === "file"
+            ? "It will move to Deleted."
+            : "It will move to Deleted with its contents.",
+        confirmLabel: "Delete",
+        tone: "danger",
+      });
+
+      if (!accepted) {
+        return;
       }
-      router.refresh();
+
+      await runAction("Deleting item", async () => {
+        const formData = new FormData();
+        formData.append(type === "file" ? "fileId" : "folderId", id);
+        if (type === "file") {
+          await softDeleteFileAction(formData);
+        } else {
+          await softDeleteFolderAction(formData);
+        }
+        router.refresh();
+      });
     } catch (e) {
       console.error("Delete failed:", e);
     }
@@ -168,13 +191,26 @@ export function FilesShell({
 
   async function handleBulkDelete() {
     try {
-      const formData = new FormData();
-      for (const id of selection.selectedFileIds) formData.append("fileId", id);
-      for (const id of selection.selectedFolderIds)
-        formData.append("folderId", id);
-      await bulkDeleteFilesAction(formData);
-      selection.clearAll();
-      router.refresh();
+      const accepted = await confirm({
+        title: "Delete selected items?",
+        description: "They will move to Deleted.",
+        confirmLabel: "Delete",
+        tone: "danger",
+      });
+
+      if (!accepted) {
+        return;
+      }
+
+      await runAction("Deleting items", async () => {
+        const formData = new FormData();
+        for (const id of selection.selectedFileIds) formData.append("fileId", id);
+        for (const id of selection.selectedFolderIds)
+          formData.append("folderId", id);
+        await bulkDeleteFilesAction(formData);
+        selection.clearAll();
+        router.refresh();
+      });
     } catch (e) {
       console.error("Bulk delete failed:", e);
     }
@@ -182,15 +218,17 @@ export function FilesShell({
 
   async function handleBulkMove(targetFolderId: string | null) {
     try {
-      const formData = new FormData();
-      for (const id of selection.selectedFileIds) formData.append("fileId", id);
-      for (const id of selection.selectedFolderIds)
-        formData.append("folderId", id);
-      formData.append("targetFolderId", targetFolderId ?? "");
-      await bulkMoveFilesAction(formData);
-      setMoveOpen(false);
-      selection.clearAll();
-      router.refresh();
+      await runAction("Moving items", async () => {
+        const formData = new FormData();
+        for (const id of selection.selectedFileIds) formData.append("fileId", id);
+        for (const id of selection.selectedFolderIds)
+          formData.append("folderId", id);
+        formData.append("targetFolderId", targetFolderId ?? "");
+        await bulkMoveFilesAction(formData);
+        setMoveOpen(false);
+        selection.clearAll();
+        router.refresh();
+      });
     } catch (e) {
       console.error("Bulk move failed:", e);
     }
@@ -223,13 +261,15 @@ export function FilesShell({
   }
 
   async function handleCreateFolder(name: string, visibility: string) {
-    const formData = new FormData();
-    formData.append("name", name);
-    if (folderId) formData.append("parentFolderId", folderId);
-    formData.append("visibility", visibility);
-    await createFolderAction(formData);
-    setNewFolderOpen(false);
-    router.refresh();
+    await runAction("Creating folder", async () => {
+      const formData = new FormData();
+      formData.append("name", name);
+      if (folderId) formData.append("parentFolderId", folderId);
+      formData.append("visibility", visibility);
+      await createFolderAction(formData);
+      setNewFolderOpen(false);
+      router.refresh();
+    });
   }
 
   function handleDragOver(e: React.DragEvent) {

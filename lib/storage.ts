@@ -138,6 +138,15 @@ export async function createDownloadUrl(storageKey: string) {
   return createDownloadUrlWithOptions(storageKey);
 }
 
+function encodeContentDispositionFilename(filename: string) {
+  // RFC 5987 attr-char is stricter than encodeURIComponent and does not allow
+  // characters like apostrophes or parentheses in filename* values.
+  return encodeURIComponent(filename).replace(
+    /['()*]/g,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+}
+
 export function buildDownloadDisposition(filename?: string) {
   if (!filename) {
     return 'attachment; filename="file"';
@@ -154,7 +163,7 @@ export function buildDownloadDisposition(filename?: string) {
     .replace(/^_+|_+$/g, "")
     .trim() || "file";
 
-  return `attachment; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(safeFilename || "file")}`;
+  return `attachment; filename="${fallback}"; filename*=UTF-8''${encodeContentDispositionFilename(safeFilename || "file")}`;
 }
 
 export async function createDownloadUrlWithOptions(

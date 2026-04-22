@@ -1,6 +1,6 @@
 # Cloud Drive
 
-An internal file workspace built for teams. Cloud Drive provides Google Drive-like functionality for organizations: folder hierarchies, direct browser uploads (including multipart for large files), visibility controls, shareable links, soft-delete with retention, admin dashboards, and comprehensive audit logging.
+An internal file workspace for teams. Cloud Drive provides folder hierarchies, direct browser uploads to Backblaze B2, download-only share links, soft delete with retention, admin controls, and a full audit trail.
 
 ## Features
 
@@ -8,12 +8,12 @@ An internal file workspace built for teams. Cloud Drive provides Google Drive-li
 - **Direct browser-to-storage uploads** — files go straight to Backblaze B2 via presigned URLs, never through your server
 - **Multipart uploads** — automatic chunking for files over 500MB with resumable-like progress
 - **Visibility controls** — per-file and per-folder `private` or `workspace` visibility
-- **Shareable links** — time-limited public download links with email notifications
+- **Shareable links** — time-limited public download links with expiry and optional email notification
 - **Soft delete & retention** — deleted items are retained for a configurable window before admin hard-delete
 - **Admin dashboard** — policy settings for upload limits, blocked extensions, retention days, and default share expiry
 - **Audit logging** — every file/folder CRUD, share create/revoke, and permission change is logged
 - **Password reset** — email-backed flow via Resend
-- **Security headers** — HSTS, CSP, referrer policy, and framing protections on all routes
+- **Security headers** — HSTS, referrer policy, framing protection, and related hardening on all routes
 
 ## Tech Stack
 
@@ -50,6 +50,13 @@ An internal file workspace built for teams. Cloud Drive provides Google Drive-li
 3. Client uploads bytes **directly to B2** via XMLHttpRequest (never through Vercel)
 4. Client calls `POST /api/files/{id}/complete-upload` — finalizes DB state, inserts `fileVersions`, marks file as `ready`
 
+### Download Flow
+
+1. Client opens an app download route
+2. The route validates auth or public share access
+3. The app redirects to a short-lived signed Backblaze B2 download URL
+4. Backblaze serves the file with attachment headers so the browser downloads it directly
+
 ### Key Directories
 
 ```
@@ -71,8 +78,8 @@ app/
 components/
   files/                # File explorer UI (toolbar, content, dialogs, selection)
   upload-queue.tsx      # Floating upload progress panel
-  upload-trigger.tsx    # Drag overlay and file input trigger
   action-ui.tsx         # Global confirm dialogs and pending overlays
+  route-loading-screen.tsx # Shared page-loading treatment
 hooks/
   use-upload-queue.ts   # Upload lifecycle with XHR progress
 lib/
@@ -118,10 +125,12 @@ npm run dev
 
 The app will be available at `http://localhost:3000`.
 
-### Validate a production build locally
+### Validate Locally
 
 ```bash
-npm run lint && npm run build
+npm run test
+npm run lint
+npm run build
 ```
 
 ## Environment Variables
@@ -146,7 +155,7 @@ Copy `.env.example` to `.env.local` and fill in all required values.
 |----------|-------------|---------|
 | `NEXT_PUBLIC_APP_URL` | Public app URL exposed to client. Falls back to `APP_BASE_URL` | — |
 | `RESEND_API_KEY` | Resend API key for password reset and share notifications | — |
-| `RESEND_FROM_EMAIL` | Verified sender address. Example: `Cloud Drive <noreply@yourcompany.com>` | — |
+| `RESEND_FROM_EMAIL` | Verified sender address. Example: `Cloud Drive <noreply@email.yourcompany.com>` | — |
 | `INTERNAL_EMAIL_DOMAIN` | Restrict signups to this email domain. Example: `yourcompany.com` | — |
 | `MAX_UPLOAD_SIZE_BYTES` | Maximum upload size in bytes | `10737418240` (10 GB) |
 | `DEFAULT_SOFT_DELETE_RETENTION_DAYS` | Days to retain soft-deleted files | `30` |
@@ -158,7 +167,7 @@ Copy `.env.example` to `.env.local` and fill in all required values.
 1. Create a **private** bucket.
 2. Enable **SSE-B2** default encryption.
 3. Generate an **Application Key** with access to that bucket.
-4. Configure **CORS** on the bucket to allow `PUT` requests from your app origin:
+4. Configure **CORS** on the bucket to allow browser uploads from your app origin:
    - Allowed Origins: `https://drive.yourcompany.com` (and `http://localhost:3000` for dev)
    - Allowed Operations: `s3:PutObject`, `s3:AbortMultipartUpload`, `s3:ListMultipartUploadParts`, `s3:ListBucketMultipartUploads`
    - Allowed Headers: `Content-Type`, `Origin`
@@ -175,7 +184,7 @@ The Drizzle schema defines the following entities:
 - **files** — file metadata with `status` (`pending` | `ready` | `failed` | `deleted`), `currentVersionId`
 - **fileVersions** — immutable version records pointing to B2 storage keys
 - **uploads** — upload session tracking with `uploadStatus` and `providerUploadId` for multipart
-- **shareLinks** — public download tokens with expiry and optional password metadata
+- **shareLinks** — public download tokens with expiry
 - **auditLogs** — structured audit events with actor, action type, resource, and JSON metadata
 - **appSettings** — key-value JSONB feature flags and policy overrides
 
@@ -200,6 +209,11 @@ npm run dev          # Dev server (Turbopack)
 npm run build        # Production build
 npm start            # Start production server
 npm run lint         # ESLint
+npm run test         # Vitest run
+npm run test:watch   # Vitest watch mode
+npm run test:ui      # Vitest UI
+npm run test:e2e     # Playwright run
+npm run test:e2e:ui  # Playwright UI
 ```
 
 ### Type Checking
@@ -215,6 +229,7 @@ npx tsc --noEmit
 - **Path alias** `@/` used for all project imports
 - **Lucide React** for all icons
 - **Design system**: warm beige (`#f7f4ee`), emerald accent (`#197a68`), ink-scale neutrals, glassmorphism (`backdrop-blur`, `bg-white/80`, `rounded-[2rem]`)
+- **Action UX**: use `components/action-ui.tsx` for blocking pending overlays and custom confirmations
 - Typed routes enabled (`typedRoutes: true`); dynamic query strings use `// @ts-expect-error`
 
 ## Testing
@@ -265,7 +280,14 @@ Stack: Playwright (Chromium). Tests are in `e2e/`.
 4. Add the build command:
    - Build Command: `npm run build`
    - Output Directory: `.next`
-5. Ensure `VERCEL_PROJECT_PRODUCTION_URL` or `APP_BASE_URL` is set so share links and auth redirects use the correct origin.
+5. Ensure `APP_BASE_URL` is set for the canonical production origin. `VERCEL_PROJECT_PRODUCTION_URL` and `VERCEL_URL` are fallback sources when `APP_BASE_URL` is not present.
+
+### Production Notes
+
+- Large uploads are browser-to-B2, so file bytes do not pass through Vercel functions.
+- App download routes redirect to signed B2 URLs, so downloads do not stream through Vercel.
+- Public shares are download-only. File preview routes are intentionally not part of the product.
+- The app resolves auth and password-reset origins dynamically for Vercel and forwarded hosts, with `APP_BASE_URL` still preferred as the canonical origin.
 
 ### Health Check
 
@@ -281,7 +303,7 @@ The app exposes a readiness endpoint at `/api/health` that reports the status of
 - **Auth secret** must be ≥ 32 characters
 - **Upload limits** enforced at initiation (`MAX_UPLOAD_SIZE_BYTES`)
 - **Blocked extensions** checked at upload initiation; configurable via admin settings
-- **Share links** use cryptographically random tokens with optional expiry and password
+- **Share links** use cryptographically random tokens with optional expiry
 - **Audit logging** covers all mutations for compliance and forensics
 - **Security headers** applied globally via `next.config.ts`:
   - HSTS with preload
@@ -304,6 +326,10 @@ Permission helpers (`canViewResource`, `canEditResource`, `canDeleteResource`, `
 
 Ensure your B2 bucket CORS allows your app origin. In development, add `http://localhost:3000`.
 
+### Downloads return Backblaze XML errors
+
+Check the filename being signed into `Content-Disposition`. The app now RFC 5987-encodes `filename*` in `lib/storage.ts`; if this regresses, filenames containing characters like parentheses can be rejected by B2.
+
 ### `db.select().from is not a function` in tests
 
 API route tests mock `db` at the module level. When overriding `db.select` for a single test, use `mockImplementationOnce` rather than `mockImplementation` so the override does not leak to subsequent tests.
@@ -312,6 +338,15 @@ API route tests mock `db` at the module level. When overriding `db.select` for a
 
 Dynamic `router.push` with query strings requires `// @ts-expect-error Typed routes don't support dynamic query strings`.
 
+## Current Validation
+
+The current checked repo state has passed:
+
+- `npm run test` for the unit/component test suite
+- `npm run lint`
+- `npm run build`
+- `npx drizzle-kit migrate`
+
 ## License
 
-Private — all rights reserved.
+MIT License. See [LICENSE](/Users/sayuru/Documents/GitHub/cloud-drive/LICENSE).

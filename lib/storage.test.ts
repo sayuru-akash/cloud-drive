@@ -91,4 +91,10 @@ describe("buildDownloadDisposition", () => {
     const result = buildDownloadDisposition("my_file.v2.pdf");
     expect(result).toContain('filename="my_file.v2.pdf"');
   });
+
+  it("percent-encodes parentheses in filename*", () => {
+    const result = buildDownloadDisposition("test (v2).pdf");
+    expect(result).toContain('filename="test__v2_.pdf"');
+    expect(result).toContain("filename*=UTF-8''test%20%28v2%29.pdf");
+  });
 });
