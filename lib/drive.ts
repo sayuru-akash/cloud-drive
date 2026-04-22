@@ -61,7 +61,7 @@ type SortableItem = {
   sizeBytes?: number | null;
 };
 
-function sortItems<T extends SortableItem>(items: T[], sort: FileSortValue) {
+export function sortItems<T extends SortableItem>(items: T[], sort: FileSortValue) {
   return [...items].sort((left, right) => {
     switch (sort) {
       case "updated-asc":
@@ -81,7 +81,7 @@ function sortItems<T extends SortableItem>(items: T[], sort: FileSortValue) {
   });
 }
 
-function isWithinDateRange(value: Date, from?: string, to?: string) {
+export function isWithinDateRange(value: Date, from?: string, to?: string) {
   const current = value.getTime();
 
   if (from) {
@@ -107,7 +107,7 @@ function isWithinDateRange(value: Date, from?: string, to?: string) {
   return true;
 }
 
-function resolveUniqueName(existingNames: string[], desiredName: string) {
+export function resolveUniqueName(existingNames: string[], desiredName: string) {
   const trimmed = desiredName.trim();
 
   if (!trimmed) {

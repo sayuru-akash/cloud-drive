@@ -96,23 +96,58 @@ npx drizzle-kit migrate
 
 ## Testing Strategy
 
-> No test suite is currently configured. The `.playwright-cli/` directory contains only runtime logs from an external CLI tool, not actual Playwright tests. There are no `.spec.ts`, `.test.ts`, or `.test.tsx` files in the project source.
+### Test Stack
 
-### Verification Steps Performed Manually
+- **Unit / Component tests**: Vitest + jsdom + React Testing Library + MSW
+- **E2E tests**: Playwright (Chromium)
+- **Coverage**: Istanbul via Vitest (`npm run test -- --coverage`)
 
-After non-trivial changes, run the following checks before considering the task complete:
+### Test Commands
 
-1. `npx tsc --noEmit` — TypeScript strict-mode type check
-2. `npm run build` — Production build with Turbopack
-3. `npm run lint` — ESLint across the entire project
-4. `npx eslint <path>` — Targeted lint on newly created or edited files
+```bash
+# Run all unit/component tests (CI mode)
+npm run test
 
-### Recommended Test Coverage (Not Yet Implemented)
+# Watch mode for development
+npm run test:watch
 
-- **Unit tests** (Vitest): `lib/storage.ts` (B2 disposition sanitization, multipart math), `lib/drive.ts` (permission helpers), `lib/env.ts` (Zod schema validation)
-- **Component tests** (Vitest + React Testing Library): `FilesContent` selection logic, `useUploadQueue` state transitions, `NewFolderDialog` form validation
-- **E2E tests** (Playwright): file upload flow (single + multipart), folder creation, share link generation, drag-and-drop, refresh during upload, soft-delete recovery
-- **CI workflow** (GitHub Actions): run typecheck, lint, build, and `npm audit` on every PR
+# UI mode for debugging
+npm run test:ui
+
+# Run E2E tests (requires dev server)
+npm run test:e2e
+
+# E2E with UI debugger
+npm run test:e2e:ui
+```
+
+### Existing Test Coverage
+
+| Area | Files | Count |
+|---|---|---|
+| **lib/storage.ts** | `lib/storage.test.ts` | `buildStorageKey`, `buildDownloadDisposition` |
+| **lib/drive.ts** | `lib/drive.test.ts` | Permission helpers, `sortItems`, `isWithinDateRange`, `resolveUniqueName` |
+| **lib/env.ts** | `lib/env.test.ts` | Zod schema validation, `normalizeAbsoluteUrl` |
+| **Hooks** | `hooks/selection-hooks.test.ts` | `useSelection` toggle, range select, clear |
+| **Components** | `components/upload-queue.test.tsx` | Render states, cancel/retry/clear actions |
+| **Components** | `components/files/new-folder-dialog.test.tsx` | Form validation, submit, cancel, escape key |
+| **API Routes** | `app/api/files/initiate-upload/route.test.ts` | Single/multipart initiation, blocked extensions, size limits |
+| **E2E** | `e2e/public-pages.spec.ts` | Public page loads, health endpoint |
+
+### Test Patterns
+
+- Mock `server-only` in `vitest.setup.ts` so server-only modules can be imported in tests
+- Mock `next/navigation` and `next/link` globally in the setup file
+- Set required env vars in `vitest.config.ts` under `test.env` so `lib/env.ts` parses successfully
+- Use `vi.mock` at the top of API route tests to mock `db`, `storage`, `auth/session`, and `audit`
+- Export pure helper functions from `lib/` files (e.g., `buildDownloadDisposition`, `sortItems`) to enable direct unit testing without mocking side effects
+
+### Gaps to Fill
+
+- `useUploadQueue` hook (requires mocking `fetch` and `XMLHttpRequest`)
+- `FilesContent` / `FilesToolbar` components (requires more elaborate router mocking)
+- Authenticated E2E flows (requires test database seeding and Better Auth session setup)
+- Remaining API routes: `complete-upload`, `cancel-upload`, `download`, `preview`
 
 ## Security & Compliance
 

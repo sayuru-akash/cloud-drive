@@ -42,10 +42,17 @@ export function UploadQueue({
 
   return (
     <div className="fixed bottom-6 right-6 z-40 w-80 rounded-[1.5rem] border border-ink-200/80 bg-white/95 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)] backdrop-blur">
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setExpanded((v) => !v)}
-        className="flex w-full items-center justify-between px-4 py-3"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setExpanded((v) => !v);
+          }
+        }}
+        className="flex w-full cursor-pointer items-center justify-between px-4 py-3"
       >
         <span className="text-sm font-medium text-ink-950">
           {active.length > 0
@@ -71,7 +78,7 @@ export function UploadQueue({
             <ChevronUp className="h-4 w-4 text-ink-500" />
           )}
         </div>
-      </button>
+      </div>
 
       {expanded && (
         <div className="max-h-72 space-y-2 overflow-y-auto border-t border-ink-200/60 px-4 pb-4 pt-2">

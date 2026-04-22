@@ -1,7 +1,7 @@
 import { LoaderCircle } from "lucide-react";
 
 export function RouteLoadingScreen({
-  label = "Loading workspace",
+  label = "Loading drive",
   workspace = false,
 }: {
   label?: string;
@@ -70,7 +70,7 @@ export function RouteLoadingScreen({
               </div>
               <div>
                 <p className="text-sm font-medium text-ink-950">{label}</p>
-                <p className="text-xs text-ink-500">Preparing view</p>
+                <p className="text-xs text-ink-500">Preparing your drive</p>
               </div>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 
-function normalizeAbsoluteUrl(value: string | undefined) {
+export function normalizeAbsoluteUrl(value: string | undefined) {
   if (!value) {
     return undefined;
   }
@@ -11,7 +11,7 @@ function normalizeAbsoluteUrl(value: string | undefined) {
     : `https://${value}`;
 }
 
-const serverEnvSchema = z.object({
+export const serverEnvSchema = z.object({
   APP_BASE_URL: z.string().url().optional(),
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   BETTER_AUTH_SECRET: z
@@ -30,7 +30,7 @@ const serverEnvSchema = z.object({
   VERCEL_PROJECT_PRODUCTION_URL: z.string().url().optional(),
 });
 
-const publicEnvSchema = z.object({
+export const publicEnvSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
 });
 

@@ -138,7 +138,7 @@ export async function createDownloadUrl(storageKey: string) {
   return createDownloadUrlWithOptions(storageKey);
 }
 
-function buildDownloadDisposition(filename?: string) {
+export function buildDownloadDisposition(filename?: string) {
   if (!filename) {
     return 'attachment; filename="file"';
   }
