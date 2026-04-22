@@ -15,6 +15,13 @@
       "when": 1776891600000,
       "tag": "0001_multipart_uploads",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776895200000,
+      "tag": "0002_download_only_shares",
+      "breakpoints": true
     }
   ]
 }

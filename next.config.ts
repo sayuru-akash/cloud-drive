@@ -34,17 +34,6 @@ const denyFramingHeaders = [
   },
 ];
 
-const sameOriginPreviewHeaders = [
-  {
-    key: "X-Frame-Options",
-    value: "SAMEORIGIN",
-  },
-  {
-    key: "Content-Security-Policy",
-    value: "frame-ancestors 'self';",
-  },
-];
-
 const nextConfig: NextConfig = {
   typedRoutes: true,
   poweredByHeader: false,
@@ -53,10 +42,6 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      {
-        source: "/api/public-share/:token/preview",
-        headers: [...baseSecurityHeaders, ...sameOriginPreviewHeaders],
-      },
       {
         source: "/:path*",
         headers: [...baseSecurityHeaders, ...denyFramingHeaders],

@@ -25,14 +25,6 @@ export function ShareLinkForm({ fileId }: ShareLinkFormProps) {
     >
       <input type="hidden" name="fileId" value={fileId} />
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
-        <select
-          name="mode"
-          defaultValue="view"
-          className="rounded-2xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900"
-        >
-          <option value="view">View only</option>
-          <option value="download">Download</option>
-        </select>
         <div className="flex items-center gap-2">
           <span className="text-sm text-ink-600">Expires in</span>
           <input
@@ -76,7 +68,7 @@ export function ShareLinkForm({ fileId }: ShareLinkFormProps) {
               rel="noreferrer"
               className="rounded-full border border-emerald-300 px-4 py-2 text-xs font-medium text-emerald-800 transition hover:bg-white"
             >
-              Open
+              Open link
             </a>
             <button
               type="button"

@@ -143,9 +143,7 @@ export function FileGridCard({
           <FolderOpen className="h-12 w-12 text-emerald-700/60" />
         ) : (
           <FileThumbnail
-            fileId={item.id}
             mimeType={item.mimeType}
-            name={name}
             className="h-full w-full"
           />
         )}

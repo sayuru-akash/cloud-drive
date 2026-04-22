@@ -5,13 +5,6 @@ import { files, shareLinks } from "@/lib/db/schema";
 import { getCurrentFileVersion } from "@/lib/drive";
 import { hashValue } from "@/lib/ids";
 
-export function isPreviewableMimeType(mimeType: string | null | undefined) {
-  return Boolean(
-    mimeType &&
-      (mimeType.startsWith("image/") || mimeType === "application/pdf"),
-  );
-}
-
 export async function getActivePublicShareByToken(token: string) {
   const tokenHash = hashValue(token);
 
@@ -19,7 +12,6 @@ export async function getActivePublicShareByToken(token: string) {
     .select({
       id: shareLinks.id,
       fileId: shareLinks.resourceId,
-      mode: shareLinks.mode,
       expiresAt: shareLinks.expiresAt,
       isRevoked: shareLinks.isRevoked,
       fileName: files.displayName,
@@ -52,6 +44,5 @@ export async function getActivePublicShareByToken(token: string) {
   return {
     ...share,
     version,
-    previewable: isPreviewableMimeType(share.mimeType),
   };
 }

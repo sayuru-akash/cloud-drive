@@ -10,7 +10,7 @@ export async function GET(
   const { token } = await params;
   const share = await getActivePublicShareByToken(token);
 
-  if (!share || share.mode !== "download") {
+  if (!share) {
     return NextResponse.json({ error: "Download unavailable." }, { status: 404 });
   }
 

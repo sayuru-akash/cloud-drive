@@ -1012,7 +1012,6 @@ export async function createShareLinkAction(
   const session = await requireSession();
   const settings = await getAppSettings();
   const fileId = String(formData.get("fileId") ?? "");
-  const mode = String(formData.get("mode") ?? "view") === "download" ? "download" : "view";
   const notifyEmail = String(formData.get("notifyEmail") ?? "").trim().toLowerCase();
   const expiryDaysRaw = String(formData.get("expiryDays") ?? settings.defaultShareExpiryDays);
   const expiryDays = Math.max(
@@ -1046,7 +1045,7 @@ export async function createShareLinkAction(
     resourceId: fileId,
     tokenHash: hashValue(token),
     createdByUserId: session.user.id,
-    mode,
+    mode: "download",
     expiresAt,
   });
 
@@ -1060,7 +1059,6 @@ export async function createShareLinkAction(
         shareUrl: url,
         expiresAt,
         senderName: session.user.name,
-        mode,
       });
       notice = `Share email sent to ${notifyEmail}.`;
     } catch {
@@ -1076,7 +1074,7 @@ export async function createShareLinkAction(
     resourceId: shareId,
     metadataJson: {
       fileId,
-      mode,
+      mode: "download",
       expiresAt,
       notifyEmail: notifyEmail || null,
     },

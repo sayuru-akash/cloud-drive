@@ -123,15 +123,22 @@ npm run test:e2e:ui
 
 ### Existing Test Coverage
 
-| Area | Files | Count |
+| Area | Files | Coverage |
 |---|---|---|
 | **lib/storage.ts** | `lib/storage.test.ts` | `buildStorageKey`, `buildDownloadDisposition` |
 | **lib/drive.ts** | `lib/drive.test.ts` | Permission helpers, `sortItems`, `isWithinDateRange`, `resolveUniqueName` |
 | **lib/env.ts** | `lib/env.test.ts` | Zod schema validation, `normalizeAbsoluteUrl` |
 | **Hooks** | `hooks/selection-hooks.test.ts` | `useSelection` toggle, range select, clear |
+| **Hooks** | `hooks/use-upload-queue.test.ts` | Queue, single/multipart upload, XHR error, cancel, retry, clear done |
 | **Components** | `components/upload-queue.test.tsx` | Render states, cancel/retry/clear actions |
 | **Components** | `components/files/new-folder-dialog.test.tsx` | Form validation, submit, cancel, escape key |
+| **Components** | `components/files/files-content.test.tsx` | Empty state, list/grid views, selection, callbacks |
+| **Components** | `components/files/files-toolbar.test.tsx` | Breadcrumbs, search, view toggle, select all, refresh, new dropdown |
 | **API Routes** | `app/api/files/initiate-upload/route.test.ts` | Single/multipart initiation, blocked extensions, size limits |
+| **API Routes** | `app/api/files/[id]/complete-upload/route.test.ts` | Single/multipart completion, 404, 403, 400 cases |
+| **API Routes** | `app/api/files/[id]/cancel-upload/route.test.ts` | Cancel success, 404, 403, no-pending-upload |
+| **API Routes** | `app/api/files/[id]/download/route.test.ts` | Presigned redirect, 404, 403, deleted, missing version |
+| **API Routes** | `app/api/files/[id]/preview/route.test.ts` | Stream headers, 404, 403, missing version, unreadable body |
 | **E2E** | `e2e/public-pages.spec.ts` | Public page loads, health endpoint |
 
 ### Test Patterns
@@ -141,13 +148,12 @@ npm run test:e2e:ui
 - Set required env vars in `vitest.config.ts` under `test.env` so `lib/env.ts` parses successfully
 - Use `vi.mock` at the top of API route tests to mock `db`, `storage`, `auth/session`, and `audit`
 - Export pure helper functions from `lib/` files (e.g., `buildDownloadDisposition`, `sortItems`) to enable direct unit testing without mocking side effects
+- Mock `fetch` and `XMLHttpRequest` via `vi.stubGlobal` in hook tests; use regular `function` (not arrow) for `XMLHttpRequest` so `new` works correctly
+- When overriding `db.select` in a single API route test, use `mockImplementationOnce` to avoid leaking the override to subsequent tests
 
-### Gaps to Fill
+### Remaining Gaps
 
-- `useUploadQueue` hook (requires mocking `fetch` and `XMLHttpRequest`)
-- `FilesContent` / `FilesToolbar` components (requires more elaborate router mocking)
 - Authenticated E2E flows (requires test database seeding and Better Auth session setup)
-- Remaining API routes: `complete-upload`, `cancel-upload`, `download`, `preview`
 
 ## Security & Compliance
 

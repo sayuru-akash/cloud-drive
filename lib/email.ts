@@ -122,14 +122,12 @@ export async function sendShareLinkEmail({
   shareUrl,
   expiresAt,
   senderName,
-  mode,
 }: {
   to: string;
   fileName: string;
   shareUrl: string;
   expiresAt?: Date | null;
   senderName?: string | null;
-  mode: "view" | "download";
 }) {
   const expiryText = expiresAt
     ? `This link expires on ${expiresAt.toLocaleString()}.`
@@ -143,9 +141,9 @@ export async function sendShareLinkEmail({
         <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:24px;padding:32px;border:1px solid #e7e1d7;">
           <p style="margin:0 0 16px;color:#475569;font-size:14px;letter-spacing:0.12em;text-transform:uppercase;">Cloud Drive</p>
           <h1 style="margin:0 0 16px;color:#0f172a;font-size:30px;line-height:1.1;">${fileName}</h1>
-          <p style="margin:0 0 16px;color:#334155;font-size:16px;line-height:1.8;">${senderName ?? "A teammate"} shared a ${mode === "download" ? "download-enabled" : "view-only"} link with you.</p>
+          <p style="margin:0 0 16px;color:#334155;font-size:16px;line-height:1.8;">${senderName ?? "A teammate"} shared a download link with you.</p>
           <p style="margin:24px 0;">
-            <a href="${shareUrl}" style="display:inline-block;padding:14px 22px;border-radius:999px;background:#0f172a;color:#ffffff;text-decoration:none;font-weight:600;">Open shared file</a>
+            <a href="${shareUrl}" style="display:inline-block;padding:14px 22px;border-radius:999px;background:#0f172a;color:#ffffff;text-decoration:none;font-weight:600;">Download file</a>
           </p>
           <p style="margin:0;color:#64748b;font-size:14px;line-height:1.8;">${expiryText}</p>
         </div>

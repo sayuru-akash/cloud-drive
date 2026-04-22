@@ -56,17 +56,17 @@ export const fileRows = [
 export const shareLinks = [
   {
     name: "partner-renewal-redlines.pdf",
-    mode: "View only with 7-day expiry",
+    mode: "Download link with 7-day expiry",
     expires: "in 7 days",
   },
   {
     name: "warehouse-onboarding.mp4",
-    mode: "Download enabled for internal users",
+    mode: "Download link for internal users",
     expires: "workspace policy",
   },
   {
     name: "q2-board-pack.pdf",
-    mode: "Password-protected public view link",
+    mode: "Password-protected download link",
     expires: "tomorrow",
   },
 ];

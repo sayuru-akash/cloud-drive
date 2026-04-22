@@ -173,7 +173,7 @@ export const shareLinks = pgTable(
     createdByUserId: text("created_by_user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    mode: shareModeEnum("mode").default("view").notNull(),
+    mode: shareModeEnum("mode").default("download").notNull(),
     passwordHash: text("password_hash"),
     expiresAt: timestamp("expires_at"),
     isRevoked: boolean("is_revoked").default(false).notNull(),

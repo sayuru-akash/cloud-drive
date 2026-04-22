@@ -1,7 +1,6 @@
-/* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Download, Eye, FileText } from "lucide-react";
+import { Download, FileText } from "lucide-react";
 import { getActivePublicShareByToken } from "@/lib/shares";
 
 export const metadata: Metadata = {
@@ -36,12 +35,7 @@ export default async function PublicSharePage({
     );
   }
 
-  const previewUrl = share.previewable
-    ? `/api/public-share/${token}/preview`
-    : null;
-  const downloadUrl = share.mode === "download"
-    ? `/api/public-share/${token}/download`
-    : null;
+  const downloadUrl = `/api/public-share/${token}/download`;
 
   return (
     <main className="relative flex min-h-screen items-center justify-center px-6 py-16">
@@ -64,50 +58,23 @@ export default async function PublicSharePage({
           </div>
 
           <div className="flex items-center gap-2">
-            {share.mode === "view" ? (
-              <span className="inline-flex items-center gap-2 rounded-full bg-emerald-700/10 px-4 py-2 text-sm font-medium text-emerald-800">
-                <Eye className="h-4 w-4" />
-                View only
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-2 rounded-full bg-emerald-700/10 px-4 py-2 text-sm font-medium text-emerald-800">
-                <Download className="h-4 w-4" />
-                Download allowed
-              </span>
-            )}
+            <span className="inline-flex items-center gap-2 rounded-full bg-emerald-700/10 px-4 py-2 text-sm font-medium text-emerald-800">
+              <Download className="h-4 w-4" />
+              Download
+            </span>
           </div>
         </div>
 
-        {previewUrl ? (
-          <div className="mt-10 overflow-hidden rounded-[1.5rem] border border-ink-200/80 bg-surface-strong p-3">
-            {share.mimeType === "application/pdf" ? (
-              <iframe
-                src={previewUrl}
-                className="h-[36rem] w-full rounded-[1rem] bg-white"
-                title={share.fileName ?? "Shared PDF"}
-              />
-            ) : (
-              <img
-                src={previewUrl}
-                alt={share.fileName ?? "Shared file preview"}
-                className="max-h-[36rem] w-full rounded-[1rem] object-contain"
-              />
-            )}
-          </div>
-        ) : null}
-
         <div className="mt-10 flex flex-wrap gap-3">
-          {downloadUrl ? (
-            <a
-              href={downloadUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-ink-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-ink-800"
-            >
-              <Download className="h-4 w-4" />
-              Download
-            </a>
-          ) : null}
+          <a
+            href={downloadUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-ink-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-ink-800"
+          >
+            <Download className="h-4 w-4" />
+            Download
+          </a>
           <Link
             href="/"
             className="rounded-full border border-ink-300 px-5 py-3 text-sm font-medium text-ink-800 transition hover:border-ink-500 hover:bg-white"

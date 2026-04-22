@@ -3,8 +3,6 @@ import { desc, eq } from "drizzle-orm";
 import {
   CheckCircle2,
   Clock,
-  Download,
-  Eye,
   Link2,
   XCircle,
 } from "lucide-react";
@@ -29,7 +27,6 @@ export default async function SharedPage() {
       id: shareLinks.id,
       fileId: shareLinks.resourceId,
       fileName: files.displayName,
-      mode: shareLinks.mode,
       expiresAt: shareLinks.expiresAt,
       isRevoked: shareLinks.isRevoked,
       createdAt: shareLinks.createdAt,
@@ -91,9 +88,8 @@ export default async function SharedPage() {
         ) : (
           <div className="space-y-2">
             {/* Table header */}
-            <div className="hidden grid-cols-[1fr_6rem_8rem_10rem_7rem] gap-4 px-4 pb-2 text-xs uppercase tracking-[0.18em] text-ink-500 lg:grid">
+            <div className="hidden grid-cols-[1fr_8rem_10rem_7rem] gap-4 px-4 pb-2 text-xs uppercase tracking-[0.18em] text-ink-500 lg:grid">
               <span>File</span>
-              <span>Mode</span>
               <span>Status</span>
               <span>Created</span>
               <span className="text-right">Actions</span>
@@ -108,25 +104,16 @@ export default async function SharedPage() {
               return (
                 <div
                   key={row.id}
-                  className="group grid items-center gap-4 rounded-[1.25rem] border border-ink-200/60 bg-white/70 px-4 py-3 transition hover:border-ink-300 hover:bg-white lg:grid-cols-[1fr_6rem_8rem_10rem_7rem]"
+                  className="group grid items-center gap-4 rounded-[1.25rem] border border-ink-200/60 bg-white/70 px-4 py-3 transition hover:border-ink-300 hover:bg-white lg:grid-cols-[1fr_8rem_10rem_7rem]"
                 >
                   <div className="min-w-0">
                     <p className="truncate font-medium text-ink-950">
                       {row.fileName ?? "Unknown file"}
                     </p>
                     <p className="text-xs text-ink-500 lg:hidden">
-                      {row.mode} • {status}
+                      Download • {status}
                     </p>
                   </div>
-
-                  <span className="hidden items-center gap-1.5 text-sm text-ink-600 lg:inline-flex">
-                    {row.mode === "download" ? (
-                      <Download className="h-3.5 w-3.5" />
-                    ) : (
-                      <Eye className="h-3.5 w-3.5" />
-                    )}
-                    {row.mode}
-                  </span>
 
                   <span className="hidden lg:block">
                     {status === "active" && (
