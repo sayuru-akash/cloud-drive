@@ -46,7 +46,7 @@ export default async function DashboardPage() {
             <FileText className="h-4 w-4 text-emerald-700 transition group-hover:scale-110" />
           </div>
           <p className="mt-5 text-3xl font-semibold tracking-[-0.05em] text-ink-950">
-            {data.summary.workspaceFiles}
+            {data.summary.totalFiles}
           </p>
           <div className="mt-3 flex items-center gap-1 text-xs font-medium text-emerald-800 opacity-0 transition group-hover:opacity-100">
             Open <ArrowRight className="h-3 w-3" />
@@ -78,7 +78,7 @@ export default async function DashboardPage() {
             <Trash2 className="h-4 w-4 text-emerald-700 transition group-hover:scale-110" />
           </div>
           <p className="mt-5 text-3xl font-semibold tracking-[-0.05em] text-ink-950">
-            {data.summary.deletedFiles}
+            {data.summary.deletedItems}
           </p>
           <div className="mt-3 flex items-center gap-1 text-xs font-medium text-emerald-800 opacity-0 transition group-hover:opacity-100">
             Open <ArrowRight className="h-3 w-3" />

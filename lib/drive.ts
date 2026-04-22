@@ -549,6 +549,8 @@ export async function getPendingUploads(userId: string, limit?: number) {
 }
 
 export async function getDashboardData(userId: string, userRole?: string | null) {
+  const isAdmin = canManageAdmin(userRole);
+
   const [pendingUploads] = await db
     .select({ value: count() })
     .from(uploads)
@@ -562,37 +564,58 @@ export async function getDashboardData(userId: string, userRole?: string | null)
   const [activeLinks] = await db
     .select({ value: count() })
     .from(shareLinks)
+    .leftJoin(files, eq(shareLinks.resourceId, files.id))
     .where(
-      canManageAdmin(userRole)
+      isAdmin
         ? and(
+            eq(shareLinks.resourceType, "file"),
             eq(shareLinks.isRevoked, false),
+            eq(files.isDeleted, false),
+            eq(files.status, "ready"),
             or(isNull(shareLinks.expiresAt), gt(shareLinks.expiresAt, new Date())),
           )
         : and(
+            eq(shareLinks.resourceType, "file"),
             eq(shareLinks.isRevoked, false),
             eq(shareLinks.createdByUserId, userId),
+            eq(files.isDeleted, false),
+            eq(files.status, "ready"),
             or(isNull(shareLinks.expiresAt), gt(shareLinks.expiresAt, new Date())),
           ),
     );
 
-  const [deletedFiles] = await db
-    .select({ value: count() })
-    .from(files)
-    .where(
-      canManageAdmin(userRole)
-        ? eq(files.isDeleted, true)
-        : and(eq(files.isDeleted, true), eq(files.ownerUserId, userId)),
-    );
+  const [deletedFiles, deletedFolders] = await Promise.all([
+    db
+      .select({ value: count() })
+      .from(files)
+      .where(
+        isAdmin
+          ? eq(files.isDeleted, true)
+          : and(eq(files.isDeleted, true), eq(files.ownerUserId, userId)),
+      )
+      .then((rows) => rows[0]),
+    db
+      .select({ value: count() })
+      .from(folders)
+      .where(
+        isAdmin
+          ? eq(folders.isDeleted, true)
+          : and(eq(folders.isDeleted, true), eq(folders.ownerUserId, userId)),
+      )
+      .then((rows) => rows[0]),
+  ]);
 
-  const [workspaceFiles] = await db
+  const [totalFiles] = await db
     .select({ value: count() })
     .from(files)
     .where(
-      and(
-        eq(files.visibility, "workspace"),
-        eq(files.isDeleted, false),
-        eq(files.status, "ready"),
-      ),
+      isAdmin
+        ? and(eq(files.isDeleted, false), eq(files.status, "ready"))
+        : and(
+            eq(files.isDeleted, false),
+            eq(files.status, "ready"),
+            or(eq(files.ownerUserId, userId), eq(files.visibility, "workspace")),
+          ),
     );
 
   const recentUploads = await db
@@ -610,12 +633,12 @@ export async function getDashboardData(userId: string, userRole?: string | null)
     .leftJoin(users, eq(files.ownerUserId, users.id))
     .leftJoin(folders, eq(files.folderId, folders.id))
     .where(
-      canManageAdmin(userRole)
+      isAdmin
         ? and(eq(files.isDeleted, false), eq(files.status, "ready"))
         : and(
             eq(files.isDeleted, false),
             eq(files.status, "ready"),
-            eq(files.ownerUserId, userId),
+            or(eq(files.ownerUserId, userId), eq(files.visibility, "workspace")),
           ),
     )
     .orderBy(desc(files.updatedAt))
@@ -627,8 +650,8 @@ export async function getDashboardData(userId: string, userRole?: string | null)
     summary: {
       pendingUploads: pendingUploads?.value ?? 0,
       activeLinks: activeLinks?.value ?? 0,
-      deletedFiles: deletedFiles?.value ?? 0,
-      workspaceFiles: workspaceFiles?.value ?? 0,
+      deletedItems: Number(deletedFiles?.value ?? 0) + Number(deletedFolders?.value ?? 0),
+      totalFiles: totalFiles?.value ?? 0,
     },
     pendingUploads: pendingUploadItems,
     recentUploads,
