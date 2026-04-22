@@ -21,6 +21,7 @@ import {
   updateFolderVisibilityAction,
 } from "@/app/(workspace)/files/actions";
 import { ShareLinkForm } from "@/components/share-link-form";
+import { UploadActivityCard } from "@/components/upload-activity-card";
 import { UploadPanel } from "@/components/upload-panel";
 import { FileIcon } from "@/components/file-icon";
 import { requireSession } from "@/lib/auth/session";
@@ -28,6 +29,7 @@ import {
   getAccessibleFolderOptions,
   getFolderAncestors,
   getFolderContents,
+  getPendingUploads,
 } from "@/lib/drive";
 import { formatBytes, formatDate } from "@/lib/format";
 
@@ -51,7 +53,7 @@ export default async function FilesPage({
   const folderId = params.folder ?? null;
   const sort = params.sort ?? "updated-desc";
   const breadcrumbs = await getFolderAncestors(folderId);
-  const [contents, moveTargets] = await Promise.all([
+  const [contents, moveTargets, pendingUploads] = await Promise.all([
     getFolderContents({
       folderId,
       userId: session.user.id,
@@ -65,6 +67,7 @@ export default async function FilesPage({
       userId: session.user.id,
       userRole: session.user.role,
     }),
+    getPendingUploads(session.user.id),
   ]);
 
   const totalItems = contents.folders.length + contents.files.length;
@@ -132,6 +135,14 @@ export default async function FilesPage({
               </button>
             </form>
           </section>
+
+          {pendingUploads.length > 0 ? (
+            <UploadActivityCard
+              id="upload-activity"
+              uploads={pendingUploads}
+              total={pendingUploads.length}
+            />
+          ) : null}
 
           <UploadPanel folderId={folderId} />
         </div>

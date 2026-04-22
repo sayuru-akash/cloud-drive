@@ -1,10 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FileText, Link2, Trash2, Upload } from "lucide-react";
+import {
+  ArrowRight,
+  Download,
+  FileText,
+  FolderOpen,
+  Link2,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { requireSession } from "@/lib/auth/session";
 import { getDashboardData } from "@/lib/drive";
 import { formatBytes, formatDate } from "@/lib/format";
 import { FileIcon } from "@/components/file-icon";
+import { UploadActivityCard } from "@/components/upload-activity-card";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -13,29 +22,6 @@ export const metadata: Metadata = {
 export default async function DashboardPage() {
   const session = await requireSession();
   const data = await getDashboardData(session.user.id, session.user.role);
-
-  const stats = [
-    {
-      label: "Total files",
-      value: String(data.summary.workspaceFiles),
-      icon: FileText,
-    },
-    {
-      label: "Active links",
-      value: String(data.summary.activeLinks),
-      icon: Link2,
-    },
-    {
-      label: "In trash",
-      value: String(data.summary.deletedFiles),
-      icon: Trash2,
-    },
-    {
-      label: "Pending uploads",
-      value: String(data.summary.pendingUploads),
-      icon: Upload,
-    },
-  ];
 
   return (
     <main className="space-y-6">
@@ -47,28 +33,99 @@ export default async function DashboardPage() {
         <p className="mt-3 max-w-2xl text-lg leading-8 text-ink-700">
           Here&apos;s what&apos;s happening in your workspace.
         </p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link
+            href="/files"
+            className="inline-flex items-center gap-2 rounded-full bg-ink-950 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-ink-800"
+          >
+            <Upload className="h-4 w-4" />
+            Upload files
+          </Link>
+          <Link
+            href="/shared"
+            className="inline-flex items-center gap-2 rounded-full border border-ink-300 px-5 py-2.5 text-sm font-medium text-ink-700 transition hover:border-ink-500 hover:bg-white"
+          >
+            <Link2 className="h-4 w-4" />
+            Shared links
+          </Link>
+        </div>
       </section>
 
       {/* Stats */}
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <article
-              key={stat.label}
-              className="rounded-[1.5rem] border border-ink-200/80 bg-white/78 p-5 shadow-[0_20px_70px_-48px_rgba(15,23,42,0.5)] backdrop-blur"
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-ink-600">{stat.label}</p>
-                <Icon className="h-4 w-4 text-emerald-700" />
-              </div>
-              <p className="mt-5 text-3xl font-semibold tracking-[-0.05em] text-ink-950">
-                {stat.value}
-              </p>
-            </article>
-          );
-        })}
+        <Link
+          href="/files"
+          className="group rounded-[1.5rem] border border-ink-200/80 bg-white/78 p-5 shadow-[0_20px_70px_-48px_rgba(15,23,42,0.5)] backdrop-blur transition hover:border-emerald-300 hover:bg-white"
+        >
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-ink-600">Total files</p>
+            <FileText className="h-4 w-4 text-emerald-700 transition group-hover:scale-110" />
+          </div>
+          <p className="mt-5 text-3xl font-semibold tracking-[-0.05em] text-ink-950">
+            {data.summary.workspaceFiles}
+          </p>
+          <div className="mt-3 flex items-center gap-1 text-xs font-medium text-emerald-800 opacity-0 transition group-hover:opacity-100">
+            Open <ArrowRight className="h-3 w-3" />
+          </div>
+        </Link>
+
+        <Link
+          href="/shared"
+          className="group rounded-[1.5rem] border border-ink-200/80 bg-white/78 p-5 shadow-[0_20px_70px_-48px_rgba(15,23,42,0.5)] backdrop-blur transition hover:border-emerald-300 hover:bg-white"
+        >
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-ink-600">Active links</p>
+            <Link2 className="h-4 w-4 text-emerald-700 transition group-hover:scale-110" />
+          </div>
+          <p className="mt-5 text-3xl font-semibold tracking-[-0.05em] text-ink-950">
+            {data.summary.activeLinks}
+          </p>
+          <div className="mt-3 flex items-center gap-1 text-xs font-medium text-emerald-800 opacity-0 transition group-hover:opacity-100">
+            Open <ArrowRight className="h-3 w-3" />
+          </div>
+        </Link>
+
+        <Link
+          href="/deleted"
+          className="group rounded-[1.5rem] border border-ink-200/80 bg-white/78 p-5 shadow-[0_20px_70px_-48px_rgba(15,23,42,0.5)] backdrop-blur transition hover:border-emerald-300 hover:bg-white"
+        >
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-ink-600">In trash</p>
+            <Trash2 className="h-4 w-4 text-emerald-700 transition group-hover:scale-110" />
+          </div>
+          <p className="mt-5 text-3xl font-semibold tracking-[-0.05em] text-ink-950">
+            {data.summary.deletedFiles}
+          </p>
+          <div className="mt-3 flex items-center gap-1 text-xs font-medium text-emerald-800 opacity-0 transition group-hover:opacity-100">
+            Open <ArrowRight className="h-3 w-3" />
+          </div>
+        </Link>
+
+        <Link
+          href="/files"
+          className="group rounded-[1.5rem] border border-ink-200/80 bg-white/78 p-5 shadow-[0_20px_70px_-48px_rgba(15,23,42,0.5)] backdrop-blur transition hover:border-emerald-300 hover:bg-white"
+        >
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-ink-600">Pending uploads</p>
+            <Upload className="h-4 w-4 text-emerald-700 transition group-hover:scale-110" />
+          </div>
+          <p className="mt-5 text-3xl font-semibold tracking-[-0.05em] text-ink-950">
+            {data.summary.pendingUploads}
+          </p>
+          <div className="mt-3 flex items-center gap-1 text-xs font-medium text-emerald-800 opacity-0 transition group-hover:opacity-100">
+            Open <ArrowRight className="h-3 w-3" />
+          </div>
+        </Link>
       </section>
+
+      {data.pendingUploads.length > 0 ? (
+        <UploadActivityCard
+          id="upload-activity"
+          uploads={data.pendingUploads}
+          total={data.summary.pendingUploads}
+          linkToFiles
+        />
+      ) : null}
 
       {/* Recent files */}
       <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-5 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur sm:p-6">
@@ -90,26 +147,62 @@ export default async function DashboardPage() {
         </div>
 
         {data.recentUploads.length === 0 ? (
-          <p className="text-sm leading-7 text-ink-600">
-            No files yet. Head to <Link href="/files" className="text-emerald-800 underline">Files</Link> to upload your first document.
-          </p>
+          <div className="py-10 text-center">
+            <p className="text-lg font-medium text-ink-950">No files yet</p>
+            <p className="mt-2 text-sm text-ink-600">
+              Head to{" "}
+              <Link
+                href="/files"
+                className="text-emerald-800 underline underline-offset-4"
+              >
+                Files
+              </Link>{" "}
+              to upload your first document.
+            </p>
+          </div>
         ) : (
           <div className="space-y-2">
             {data.recentUploads.map((file) => (
               <div
                 key={file.id}
-                className="flex items-center gap-4 rounded-[1.25rem] border border-ink-200/60 bg-white/70 px-4 py-3"
+                className="group flex items-center gap-4 rounded-[1.25rem] border border-ink-200/60 bg-white/70 px-4 py-3 transition hover:border-ink-300 hover:bg-white"
               >
-                <FileIcon mimeType={file.mimeType} className="h-5 w-5 text-ink-500" />
+                <FileIcon
+                  mimeType={file.mimeType}
+                  className="h-5 w-5 shrink-0 text-ink-500"
+                />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-ink-950">{file.name}</p>
-                  <p className="text-xs text-ink-500">
-                    {formatBytes(file.sizeBytes)} • {file.ownerName ?? "You"}
+                  <Link
+                    href={`/api/files/${file.id}/download`}
+                    className="truncate font-medium text-ink-950 underline-offset-4 hover:underline"
+                  >
+                    {file.name}
+                  </Link>
+                  <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-500">
+                    <span>{formatBytes(file.sizeBytes)}</span>
+                    {file.folderId && file.folderName ? (
+                      <Link
+                        href={`/files?folder=${file.folderId}`}
+                        className="inline-flex items-center gap-1 text-emerald-800 transition hover:underline"
+                      >
+                        <FolderOpen className="h-3 w-3" />
+                        {file.folderName}
+                      </Link>
+                    ) : (
+                      <span className="text-ink-400">Root</span>
+                    )}
                   </p>
                 </div>
                 <span className="hidden text-sm text-ink-500 sm:block">
                   {formatDate(file.updatedAt)}
                 </span>
+                <Link
+                  href={`/api/files/${file.id}/download`}
+                  className="inline-flex rounded-full border border-ink-300 p-2 text-ink-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-800"
+                  aria-label={`Download ${file.name}`}
+                >
+                  <Download className="h-4 w-4" />
+                </Link>
               </div>
             ))}
           </div>

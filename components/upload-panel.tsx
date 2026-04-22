@@ -199,13 +199,14 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
 
   return (
     <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
+      <div id="live-upload-queue" />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm uppercase tracking-[0.24em] text-ink-500">
             Uploads
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-ink-950">
-            Upload files
+            Live queue
           </h2>
         </div>
         <button
@@ -251,7 +252,7 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
         }`}
       >
         <p className="text-sm text-ink-600">
-          Drag and drop files here, or use the button above.
+          Drop files here or use Select files.
         </p>
       </div>
 

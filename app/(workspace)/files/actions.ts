@@ -1,13 +1,13 @@
 "use server";
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAppSettings } from "@/lib/app-settings";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAdminSession, requireSession } from "@/lib/auth/session";
 import { ADMIN_ROLES, RESOURCE_VISIBILITY_VALUES } from "@/lib/constants";
 import { db } from "@/lib/db/client";
-import { fileVersions, files, folders, shareLinks } from "@/lib/db/schema";
+import { fileVersions, files, folders, shareLinks, uploads } from "@/lib/db/schema";
 import {
   canDeleteResource,
   canEditResource,
@@ -489,6 +489,73 @@ export async function softDeleteFileAction(formData: FormData) {
     actionType: "file.deleted",
     resourceType: "file",
     resourceId: fileId,
+  });
+
+  revalidateWorkspace();
+}
+
+export async function cancelPendingUploadAction(formData: FormData) {
+  const session = await requireSession();
+  const fileId = String(formData.get("fileId") ?? "");
+
+  if (!fileId) {
+    return;
+  }
+
+  const file = await getFileRecord(fileId);
+
+  if (!file) {
+    return;
+  }
+
+  if (
+    !canEditResource({
+      userId: session.user.id,
+      userRole: session.user.role,
+      ownerUserId: file.ownerUserId,
+    })
+  ) {
+    return;
+  }
+
+  const [upload] = await db
+    .select()
+    .from(uploads)
+    .where(and(eq(uploads.fileId, file.id), eq(uploads.uploadStatus, "initiated")))
+    .orderBy(desc(uploads.createdAt))
+    .limit(1);
+
+  if (!upload) {
+    return;
+  }
+
+  await db
+    .update(uploads)
+    .set({
+      uploadStatus: "cancelled",
+      updatedAt: new Date(),
+    })
+    .where(eq(uploads.id, upload.id));
+
+  await db
+    .update(files)
+    .set({
+      status: "failed",
+      isDeleted: true,
+      deletedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(files.id, file.id));
+
+  await logAuditEvent({
+    actorUserId: session.user.id,
+    actorEmail: session.user.email,
+    actionType: "file.upload.cancelled",
+    resourceType: "file",
+    resourceId: file.id,
+    metadataJson: {
+      uploadId: upload.id,
+    },
   });
 
   revalidateWorkspace();

@@ -469,6 +469,37 @@ export async function getCurrentFileVersion(fileId: string) {
   return version ?? null;
 }
 
+export async function getPendingUploads(userId: string, limit?: number) {
+  const query = db
+    .select({
+      uploadId: uploads.id,
+      fileId: files.id,
+      fileName: files.displayName,
+      originalName: files.originalName,
+      mimeType: files.mimeType,
+      folderId: files.folderId,
+      folderName: folders.name,
+      sizeBytes: uploads.sizeBytes,
+      createdAt: uploads.createdAt,
+      expiresAt: uploads.expiresAt,
+    })
+    .from(uploads)
+    .innerJoin(files, eq(uploads.fileId, files.id))
+    .leftJoin(folders, eq(files.folderId, folders.id))
+    .where(
+      and(
+        eq(uploads.initiatedByUserId, userId),
+        eq(uploads.uploadStatus, "initiated"),
+        eq(files.isDeleted, false),
+      ),
+    )
+    .orderBy(desc(uploads.createdAt));
+
+  const rows = limit ? await query.limit(limit) : await query;
+
+  return rows;
+}
+
 export async function getDashboardData(userId: string, userRole?: string | null) {
   const [pendingUploads] = await db
     .select({ value: count() })
@@ -520,9 +551,12 @@ export async function getDashboardData(userId: string, userRole?: string | null)
       sizeBytes: files.sizeBytes,
       updatedAt: files.updatedAt,
       ownerName: users.name,
+      folderId: files.folderId,
+      folderName: folders.name,
     })
     .from(files)
     .leftJoin(users, eq(files.ownerUserId, users.id))
+    .leftJoin(folders, eq(files.folderId, folders.id))
     .where(
       canManageAdmin(userRole)
         ? and(eq(files.isDeleted, false), eq(files.status, "ready"))
@@ -535,6 +569,8 @@ export async function getDashboardData(userId: string, userRole?: string | null)
     .orderBy(desc(files.updatedAt))
     .limit(5);
 
+  const pendingUploadItems = await getPendingUploads(userId, 4);
+
   return {
     summary: {
       pendingUploads: pendingUploads?.value ?? 0,
@@ -542,6 +578,7 @@ export async function getDashboardData(userId: string, userRole?: string | null)
       deletedFiles: deletedFiles?.value ?? 0,
       workspaceFiles: workspaceFiles?.value ?? 0,
     },
+    pendingUploads: pendingUploadItems,
     recentUploads,
   };
 }
