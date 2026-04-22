@@ -1,8 +1,18 @@
 import "server-only";
 import { z } from "zod";
 
+function normalizeAbsoluteUrl(value: string | undefined) {
+  if (!value) {
+    return undefined;
+  }
+
+  return value.startsWith("http://") || value.startsWith("https://")
+    ? value
+    : `https://${value}`;
+}
+
 const serverEnvSchema = z.object({
-  APP_BASE_URL: z.string().url().default("http://localhost:3000"),
+  APP_BASE_URL: z.string().url().optional(),
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   BETTER_AUTH_SECRET: z
     .string()
@@ -16,14 +26,16 @@ const serverEnvSchema = z.object({
   MAX_UPLOAD_SIZE_BYTES: z.coerce.number().int().positive().default(262144000),
   DEFAULT_SOFT_DELETE_RETENTION_DAYS: z.coerce.number().int().positive().default(30),
   INTERNAL_EMAIL_DOMAIN: z.string().min(1).optional(),
+  VERCEL_URL: z.string().url().optional(),
+  VERCEL_PROJECT_PRODUCTION_URL: z.string().url().optional(),
 });
 
 const publicEnvSchema = z.object({
-  NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
+  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
 });
 
 const parsedServerEnv = serverEnvSchema.parse({
-  APP_BASE_URL: process.env.APP_BASE_URL,
+  APP_BASE_URL: normalizeAbsoluteUrl(process.env.APP_BASE_URL),
   DATABASE_URL: process.env.DATABASE_URL,
   BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
   B2_S3_ENDPOINT: process.env.B2_S3_ENDPOINT,
@@ -36,15 +48,37 @@ const parsedServerEnv = serverEnvSchema.parse({
   DEFAULT_SOFT_DELETE_RETENTION_DAYS:
     process.env.DEFAULT_SOFT_DELETE_RETENTION_DAYS,
   INTERNAL_EMAIL_DOMAIN: process.env.INTERNAL_EMAIL_DOMAIN,
+  VERCEL_URL: normalizeAbsoluteUrl(process.env.VERCEL_URL),
+  VERCEL_PROJECT_PRODUCTION_URL: normalizeAbsoluteUrl(
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+  ),
 });
 
 const parsedPublicEnv = publicEnvSchema.parse({
-  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  NEXT_PUBLIC_APP_URL: normalizeAbsoluteUrl(process.env.NEXT_PUBLIC_APP_URL),
 });
 
+const appBaseUrl =
+  parsedServerEnv.APP_BASE_URL ??
+  parsedServerEnv.VERCEL_PROJECT_PRODUCTION_URL ??
+  parsedServerEnv.VERCEL_URL ??
+  "http://localhost:3000";
+
+const publicAppUrl = parsedPublicEnv.NEXT_PUBLIC_APP_URL ?? appBaseUrl;
+
+const trustedOrigins = Array.from(
+  new Set(
+    [
+      appBaseUrl,
+      parsedServerEnv.VERCEL_PROJECT_PRODUCTION_URL,
+      parsedServerEnv.VERCEL_URL,
+    ].filter((value): value is string => Boolean(value)),
+  ),
+);
+
 export const env = {
-  appBaseUrl: parsedServerEnv.APP_BASE_URL,
-  publicAppUrl: parsedPublicEnv.NEXT_PUBLIC_APP_URL,
+  appBaseUrl,
+  publicAppUrl,
   databaseUrl: parsedServerEnv.DATABASE_URL,
   betterAuthSecret: parsedServerEnv.BETTER_AUTH_SECRET,
   b2Endpoint: parsedServerEnv.B2_S3_ENDPOINT,
@@ -61,10 +95,11 @@ export const env = {
   defaultSoftDeleteRetentionDays:
     parsedServerEnv.DEFAULT_SOFT_DELETE_RETENTION_DAYS,
   internalEmailDomain: parsedServerEnv.INTERNAL_EMAIL_DOMAIN?.toLowerCase(),
+  trustedOrigins,
 };
 
 export const publicEnv = {
-  appUrl: parsedPublicEnv.NEXT_PUBLIC_APP_URL,
+  appUrl: publicAppUrl,
 };
 
 export const readiness = {

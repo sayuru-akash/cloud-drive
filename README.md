@@ -44,8 +44,16 @@ An internal file workspace built on Next.js 16, Better Auth, Drizzle, Neon, Back
 - `B2_KEY_ID`
 - `B2_APPLICATION_KEY`
 - `B2_BUCKET_NAME`
-- `NEXT_PUBLIC_APP_URL`
 - `APP_BASE_URL`
+
+## URL env
+
+- `APP_BASE_URL`
+  Use your canonical production origin, for example `https://drive.codezela.com`.
+- `NEXT_PUBLIC_APP_URL`
+  Optional. Keep it equal to `APP_BASE_URL` if you expose the app URL to client code.
+- `VERCEL_PROJECT_PRODUCTION_URL` and `VERCEL_URL`
+  Provided by Vercel automatically. The app now falls back to these for deployment-aware origin handling, but explicit `APP_BASE_URL` is still the safer production default.
 
 ## Email env
 

@@ -16,7 +16,7 @@ export const auth = betterAuth({
     schema,
     usePlural: true,
   }),
-  trustedOrigins: [env.appBaseUrl],
+  trustedOrigins: env.trustedOrigins,
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
