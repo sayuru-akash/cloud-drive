@@ -36,16 +36,34 @@ async function sendEmail({
   }
 }
 
+function formatUtcExpiry(expiresAt?: Date | null) {
+  if (!expiresAt) {
+    return null;
+  }
+
+  return `${new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(expiresAt)} UTC`;
+}
+
 export async function sendPasswordResetEmail({
   to,
   name,
   resetUrl,
+  expiresAt,
 }: {
   to: string;
   name?: string | null;
   resetUrl: string;
+  expiresAt?: Date | null;
 }) {
   const greeting = name?.trim() ? `Hi ${name.trim()},` : "Hi,";
+  const expiryLabel = formatUtcExpiry(expiresAt);
+  const expiryMessage = expiryLabel
+    ? `Expires at ${expiryLabel}. Ignore this email if you didn't request it.`
+    : "Ignore this email if you didn't request it.";
 
   await sendEmail({
     to,
@@ -59,11 +77,42 @@ export async function sendPasswordResetEmail({
           <p style="margin:24px 0;">
             <a href="${resetUrl}" style="display:inline-block;padding:14px 22px;border-radius:999px;background:#0f172a;color:#ffffff;text-decoration:none;font-weight:600;">Reset password</a>
           </p>
-          <p style="margin:0;color:#64748b;font-size:14px;line-height:1.8;">This link expires automatically. If you did not request a reset, you can ignore this email.</p>
+          <p style="margin:0;color:#64748b;font-size:14px;line-height:1.8;">${expiryMessage}</p>
         </div>
       </div>
     `,
-    text: `${greeting}\n\nReset your Cloud Drive password:\n${resetUrl}\n\nIf you did not request this email, you can ignore it.`,
+    text: `${greeting}\n\nReset your Cloud Drive password:\n${resetUrl}\n\n${expiryMessage}`,
+  });
+}
+
+export async function sendVerificationEmail({
+  to,
+  name,
+  verifyUrl,
+}: {
+  to: string;
+  name?: string | null;
+  verifyUrl: string;
+}) {
+  const greeting = name?.trim() ? `Hi ${name.trim()},` : "Hi,";
+
+  await sendEmail({
+    to,
+    subject: "Verify your Cloud Drive email",
+    html: `
+      <div style="font-family:Inter,Arial,sans-serif;background:#f6f3ed;padding:32px;">
+        <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:24px;padding:32px;border:1px solid #e7e1d7;">
+          <p style="margin:0 0 16px;color:#475569;font-size:14px;letter-spacing:0.12em;text-transform:uppercase;">Cloud Drive</p>
+          <h1 style="margin:0 0 16px;color:#0f172a;font-size:30px;line-height:1.1;">Verify your email</h1>
+          <p style="margin:0 0 16px;color:#334155;font-size:16px;line-height:1.8;">${greeting} Please confirm your email address to secure your account.</p>
+          <p style="margin:24px 0;">
+            <a href="${verifyUrl}" style="display:inline-block;padding:14px 22px;border-radius:999px;background:#0f172a;color:#ffffff;text-decoration:none;font-weight:600;">Verify email</a>
+          </p>
+          <p style="margin:0;color:#64748b;font-size:14px;line-height:1.8;">This link expires automatically. If you did not request this, you can ignore it.</p>
+        </div>
+      </div>
+    `,
+    text: `${greeting}\n\nVerify your Cloud Drive email:\n${verifyUrl}\n\nIf you did not request this, you can ignore it.`,
   });
 }
 

@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
+  CheckCircle2,
   Clock,
   FileWarning,
   HardDrive,
   Mail,
+  Send,
   Shield,
   User,
 } from "lucide-react";
+import { sendVerificationEmailAction } from "@/app/(workspace)/settings/actions";
 import { requireSession } from "@/lib/auth/session";
 import { getAppSettings } from "@/lib/app-settings";
 import { formatBytes } from "@/lib/format";
@@ -16,9 +19,16 @@ export const metadata: Metadata = {
   title: "Settings",
 };
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sent?: string; verified?: string }>;
+}) {
   const session = await requireSession();
   const settings = await getAppSettings();
+  const params = await searchParams;
+  const showSent = params.sent === "1";
+  const showVerified = params.verified === "1";
 
   const workspaceCards = [
     {
@@ -57,6 +67,28 @@ export default async function SettingsPage() {
           Manage your profile and view workspace policies.
         </p>
       </section>
+
+      {/* Alerts */}
+      {showSent && (
+        <div className="rounded-[1.25rem] border border-emerald-200 bg-emerald-50/60 p-4">
+          <p className="text-sm font-medium text-emerald-900">
+            Verification email sent
+          </p>
+          <p className="mt-1 text-sm text-emerald-700">
+            Check your inbox for the verification link.
+          </p>
+        </div>
+      )}
+      {showVerified && (
+        <div className="rounded-[1.25rem] border border-emerald-200 bg-emerald-50/60 p-4">
+          <p className="text-sm font-medium text-emerald-900">
+            Email verified
+          </p>
+          <p className="mt-1 text-sm text-emerald-700">
+            Your email address has been confirmed.
+          </p>
+        </div>
+      )}
 
       {/* Workspace info */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -100,9 +132,21 @@ export default async function SettingsPage() {
               </div>
               <div>
                 <p className="text-sm text-ink-500">Email</p>
-                <p className="mt-0.5 font-medium text-ink-950">
-                  {session.user.email}
-                </p>
+                <div className="mt-0.5 flex items-center gap-2">
+                  <p className="font-medium text-ink-950">
+                    {session.user.email}
+                  </p>
+                  {session.user.emailVerified ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-emerald-700">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Verified
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-amber-700">
+                      Unverified
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -139,18 +183,52 @@ export default async function SettingsPage() {
                 Password protected
               </p>
               <p className="mt-1 text-sm text-emerald-700">
-                Your account is secured with a password. You can reset it anytime via email.
+                Your account is secured with a password. You can reset it
+                anytime via email.
               </p>
             </div>
-            <div className="rounded-[1.25rem] border border-ink-200/80 bg-surface-strong p-4">
-              <p className="text-sm font-medium text-ink-900">
+
+            <div
+              className={`rounded-[1.25rem] border p-4 ${
+                session.user.emailVerified
+                  ? "border-emerald-200 bg-emerald-50/60"
+                  : "border-amber-200 bg-amber-50/60"
+              }`}
+            >
+              <p
+                className={`text-sm font-medium ${
+                  session.user.emailVerified
+                    ? "text-emerald-900"
+                    : "text-amber-900"
+                }`}
+              >
                 Email verification
               </p>
-              <p className="mt-1 text-sm text-ink-600">
+              <p
+                className={`mt-1 text-sm ${
+                  session.user.emailVerified
+                    ? "text-emerald-700"
+                    : "text-amber-700"
+                }`}
+              >
                 {session.user.emailVerified
                   ? "Your email is verified."
-                  : "Your email is not verified."}
+                  : "Your email is not verified. Verify it to secure your account."}
               </p>
+              {!session.user.emailVerified && (
+                <form
+                  action={sendVerificationEmailAction}
+                  className="mt-3"
+                >
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 rounded-full bg-ink-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-ink-800"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                    Resend verification email
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         </article>
