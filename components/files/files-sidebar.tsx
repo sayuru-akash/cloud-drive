@@ -1,77 +1,73 @@
 "use client";
 
-import { FolderPlus } from "lucide-react";
+import { FolderPlus, LoaderCircle } from "lucide-react";
+import { useFormStatus } from "react-dom";
 import { createFolderAction } from "@/app/(workspace)/files/actions";
-import { ActionForm, ActionSubmitButton } from "@/components/action-ui";
 import { UploadPanel } from "@/components/upload-panel";
-import { UploadActivityCard } from "@/components/upload-activity-card";
 
-export type PendingUpload = {
-  uploadId: string;
-  fileId: string;
-  fileName: string;
-  originalName: string;
-  mimeType: string;
-  folderId: string | null;
-  folderName: string | null;
-  sizeBytes: number;
-  createdAt: Date;
-  expiresAt: Date;
-};
+function CreateButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-ink-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-ink-800 disabled:opacity-60"
+      title="Create folder"
+    >
+      {pending ? (
+        <LoaderCircle className="h-4 w-4 animate-spin" />
+      ) : (
+        <FolderPlus className="h-4 w-4" />
+      )}
+    </button>
+  );
+}
 
 export function FilesSidebar({
   folderId,
-  pendingUploads,
 }: {
   folderId: string | null;
-  pendingUploads: PendingUpload[];
 }) {
   return (
-    <div className="w-full shrink-0 space-y-6 lg:w-80">
-      {/* New folder */}
-      <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
-        <p className="text-sm uppercase tracking-[0.24em] text-ink-500">
+    <div className="w-full shrink-0 lg:w-72">
+      <div className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-5 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
+        {/* New folder */}
+        <p className="text-xs uppercase tracking-[0.2em] text-ink-500">
           New folder
         </p>
-        <ActionForm action={createFolderAction} pendingLabel="Creating folder" className="mt-4 space-y-4">
+        <form
+          action={createFolderAction}
+          className="mt-3 flex flex-col gap-2"
+        >
           <input
             type="hidden"
             name="parentFolderId"
             value={folderId ?? ""}
           />
-          <input
-            name="name"
-            required
-            placeholder="Folder name"
-            className="w-full rounded-2xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200"
-          />
+          <div className="flex gap-2">
+            <input
+              name="name"
+              required
+              placeholder="Folder name"
+              className="min-w-0 flex-1 rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200"
+            />
+            <CreateButton />
+          </div>
           <select
             name="visibility"
             defaultValue="private"
-            className="w-full rounded-2xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200"
+            className="w-full rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200"
           >
             <option value="private">Private</option>
             <option value="workspace">Workspace</option>
           </select>
-          <ActionSubmitButton
-            pendingLabel="Creating..."
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-ink-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-ink-800"
-          >
-            <FolderPlus className="h-4 w-4" />
-            Create folder
-          </ActionSubmitButton>
-        </ActionForm>
-      </section>
+        </form>
 
-      {pendingUploads.length > 0 ? (
-        <UploadActivityCard
-          id="upload-activity"
-          uploads={pendingUploads}
-          total={pendingUploads.length}
-        />
-      ) : null}
+        <div className="my-4 h-px bg-ink-200/60" />
 
-      <UploadPanel folderId={folderId} />
+        {/* Upload */}
+        <UploadPanel folderId={folderId} compact />
+      </div>
     </div>
   );
 }

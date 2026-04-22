@@ -1,10 +1,14 @@
 import "server-only";
 import {
+  AbortMultipartUploadCommand,
+  CompleteMultipartUploadCommand,
+  CreateMultipartUploadCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
   S3Client,
+  UploadPartCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from "@/lib/env";
@@ -47,6 +51,86 @@ export async function createUploadUrl({
       ContentType: contentType,
     }),
     { expiresIn: 60 * 10 },
+  );
+}
+
+export async function createMultipartUpload({
+  storageKey,
+  contentType,
+}: {
+  storageKey: string;
+  contentType: string;
+}) {
+  return storageClient.send(
+    new CreateMultipartUploadCommand({
+      Bucket: env.b2BucketName,
+      Key: storageKey,
+      ContentType: contentType,
+    }),
+  );
+}
+
+export async function createMultipartPartUploadUrl({
+  storageKey,
+  uploadId,
+  partNumber,
+}: {
+  storageKey: string;
+  uploadId: string;
+  partNumber: number;
+}) {
+  return getSignedUrl(
+    storageClient,
+    new UploadPartCommand({
+      Bucket: env.b2BucketName,
+      Key: storageKey,
+      UploadId: uploadId,
+      PartNumber: partNumber,
+    }),
+    { expiresIn: 60 * 60 },
+  );
+}
+
+export async function completeMultipartUpload({
+  storageKey,
+  uploadId,
+  parts,
+}: {
+  storageKey: string;
+  uploadId: string;
+  parts: Array<{ partNumber: number; etag: string }>;
+}) {
+  return storageClient.send(
+    new CompleteMultipartUploadCommand({
+      Bucket: env.b2BucketName,
+      Key: storageKey,
+      UploadId: uploadId,
+      MultipartUpload: {
+        Parts: parts
+          .slice()
+          .sort((left, right) => left.partNumber - right.partNumber)
+          .map((part) => ({
+            ETag: part.etag,
+            PartNumber: part.partNumber,
+          })),
+      },
+    }),
+  );
+}
+
+export async function abortMultipartUpload({
+  storageKey,
+  uploadId,
+}: {
+  storageKey: string;
+  uploadId: string;
+}) {
+  return storageClient.send(
+    new AbortMultipartUploadCommand({
+      Bucket: env.b2BucketName,
+      Key: storageKey,
+      UploadId: uploadId,
+    }),
   );
 }
 

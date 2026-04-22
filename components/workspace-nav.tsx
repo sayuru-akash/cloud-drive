@@ -21,7 +21,6 @@ const items: ReadonlyArray<{
   label: string;
   icon: typeof LayoutDashboard;
   adminOnly?: boolean;
-  indented?: boolean;
 }> = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/files", label: "Files", icon: FolderKanban },
@@ -29,7 +28,7 @@ const items: ReadonlyArray<{
   { href: "/deleted", label: "Trash", icon: Trash2 },
   { href: "/settings", label: "Settings", icon: Settings2 },
   { href: "/admin", label: "Admin", icon: Shield, adminOnly: true },
-  { href: "/audit", label: "Audit", icon: Activity, adminOnly: true, indented: true },
+  { href: "/audit", label: "Audit", icon: Activity, adminOnly: true },
 ];
 
 export function WorkspaceNav() {
@@ -47,7 +46,7 @@ export function WorkspaceNav() {
           <BrandMark variant="minimal" />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {visibleItems.map(({ href, label, icon: Icon, indented }) => {
+          {visibleItems.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
 
             return (
@@ -58,7 +57,7 @@ export function WorkspaceNav() {
                   active
                     ? "bg-ink-950 text-white"
                     : "border border-ink-200 bg-white text-ink-700"
-                } ${indented ? "ml-2" : ""}`}
+                }`}
               >
                 <Icon
                   className={`h-4 w-4 ${active ? "text-emerald-300" : "text-emerald-700"}`}
@@ -74,7 +73,7 @@ export function WorkspaceNav() {
       <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] w-72 shrink-0 flex-col rounded-[2rem] border border-ink-200/80 bg-white/78 p-5 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur lg:flex">
         <BrandMark variant="minimal" />
         <div className="mt-10 space-y-1">
-          {visibleItems.map(({ href, label, icon: Icon, indented }) => {
+          {visibleItems.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
 
             return (
@@ -85,7 +84,7 @@ export function WorkspaceNav() {
                   active
                     ? "bg-ink-950 text-white"
                     : "text-ink-700 hover:bg-ink-950/5 hover:text-ink-950"
-                } ${indented ? "ml-5" : ""}`}
+                }`}
               >
                 <span className="flex items-center gap-3">
                   <Icon

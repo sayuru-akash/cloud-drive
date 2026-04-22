@@ -11,6 +11,7 @@ An internal file workspace built on Next.js 16, Better Auth, Drizzle, Neon, Back
 - public share links with expiry, revoke, view-only preview proxying, and download mode
 - email-backed password reset and optional share-link notification through Resend
 - admin policy settings for upload limit, blocked file extensions, retention, and default share expiry
+- direct-to-storage uploads with multipart chunking for large files
 - sitemap, robots, manifest, OG image, error boundaries, and health/readiness endpoint
 
 ## Routes

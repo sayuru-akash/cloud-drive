@@ -4,7 +4,6 @@ import {
   getFolderAncestors,
   getFolderContents,
   getFolderTree,
-  getPendingUploads,
 } from "@/lib/drive";
 import { FilesShell } from "@/components/files/files-shell";
 
@@ -34,7 +33,7 @@ export default async function FilesPage({
   const folderId = params.folder ?? null;
   const sort = params.sort ?? "updated-desc";
 
-  const [breadcrumbs, contents, folderTree, pendingUploads] = await Promise.all([
+  const [breadcrumbs, contents, folderTree] = await Promise.all([
     getFolderAncestors(folderId),
     getFolderContents({
       folderId,
@@ -46,7 +45,6 @@ export default async function FilesPage({
       sort,
     }),
     getFolderTree(session.user.id, session.user.role),
-    getPendingUploads(session.user.id),
   ]);
 
   return (
@@ -59,7 +57,6 @@ export default async function FilesPage({
       files={contents.files}
       availableFileTypes={contents.availableFileTypes}
       folderTree={folderTree}
-      pendingUploads={pendingUploads}
       params={{
         q: params.q,
         type: params.type,

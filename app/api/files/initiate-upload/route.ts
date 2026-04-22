@@ -8,7 +8,14 @@ import { db } from "@/lib/db/client";
 import { files, folders, uploads } from "@/lib/db/schema";
 import { canEditResource, ensureUniqueFileName } from "@/lib/drive";
 import { createId } from "@/lib/ids";
-import { buildStorageKey, createUploadUrl } from "@/lib/storage";
+import {
+  buildStorageKey,
+  createMultipartUpload,
+  createUploadUrl,
+} from "@/lib/storage";
+
+const MULTIPART_THRESHOLD_BYTES = 100 * 1024 * 1024;
+const MULTIPART_CHUNK_SIZE_BYTES = 64 * 1024 * 1024;
 
 const initiateUploadSchema = z.object({
   folderId: z.string().nullable().optional(),
@@ -70,10 +77,54 @@ export async function POST(request: Request) {
   const uploadId = createId("upload");
   const resolvedDisplayName = await ensureUniqueFileName(body.folderId ?? null, body.fileName);
   const storageKey = buildStorageKey(fileId, 1, resolvedDisplayName);
-  const uploadUrl = await createUploadUrl({
-    storageKey,
-    contentType: body.contentType,
-  });
+  const shouldUseMultipart = body.sizeBytes >= MULTIPART_THRESHOLD_BYTES;
+
+  let responsePayload:
+    | {
+        method: "PUT";
+        uploadStrategy: "single";
+        uploadUrl: string;
+      }
+    | {
+        method: "PUT";
+        uploadStrategy: "multipart";
+        multipartUploadId: string;
+        partSizeBytes: number;
+        totalParts: number;
+      };
+  let providerUploadId: string | null = null;
+
+  if (shouldUseMultipart) {
+    const multipartUpload = await createMultipartUpload({
+      storageKey,
+      contentType: body.contentType,
+    });
+
+    if (!multipartUpload.UploadId) {
+      throw new Error("Multipart upload could not be created.");
+    }
+
+    providerUploadId = multipartUpload.UploadId;
+
+    responsePayload = {
+      method: "PUT",
+      uploadStrategy: "multipart",
+      multipartUploadId: providerUploadId,
+      partSizeBytes: MULTIPART_CHUNK_SIZE_BYTES,
+      totalParts: Math.ceil(body.sizeBytes / MULTIPART_CHUNK_SIZE_BYTES),
+    };
+  } else {
+    const uploadUrl = await createUploadUrl({
+      storageKey,
+      contentType: body.contentType,
+    });
+
+    responsePayload = {
+      method: "PUT",
+      uploadStrategy: "single",
+      uploadUrl,
+    };
+  }
 
   await db.insert(files).values({
     id: fileId,
@@ -95,9 +146,10 @@ export async function POST(request: Request) {
     initiatedByUserId: session.user.id,
     uploadStatus: "initiated",
     storageKey,
+    providerUploadId,
     contentType: body.contentType,
     sizeBytes: body.sizeBytes,
-    expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
   });
 
   await logAuditEvent({
@@ -116,8 +168,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     fileId,
     uploadId,
-    uploadUrl,
     displayName: resolvedDisplayName,
-    method: "PUT",
+    ...responsePayload,
   });
 }

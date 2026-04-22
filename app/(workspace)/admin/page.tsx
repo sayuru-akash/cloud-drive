@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CheckCircle2, Link2, Users } from "lucide-react";
+import { HardDrive, Link2, Users } from "lucide-react";
 import {
   updateAppSettingsAction,
   updateUserRoleAction,
@@ -8,7 +8,7 @@ import {
 import { ActionForm, ActionSubmitButton } from "@/components/action-ui";
 import { requireAdminSession } from "@/lib/auth/session";
 import { getAdminOverviewData } from "@/lib/admin";
-import { formatDate } from "@/lib/format";
+import { formatBytes, formatDate } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -28,7 +28,7 @@ export default async function AdminPage() {
           Workspace management
         </h1>
         <p className="mt-2 text-lg leading-8 text-ink-700">
-          {overviewData.summary.totalUsers} users • {overviewData.summary.activeLinks} active links
+          {overviewData.summary.totalUsers} users • {formatBytes(overviewData.summary.storageUsedBytes)} stored
         </p>
       </section>
 
@@ -39,12 +39,18 @@ export default async function AdminPage() {
           <p className="mt-1 text-xl font-semibold tracking-[-0.03em] text-ink-950">
             {overviewData.summary.totalUsers}
           </p>
+          <p className="mt-2 text-xs text-ink-400">
+            {overviewData.summary.disabledUsers} disabled
+          </p>
         </article>
         <article className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
-          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-          <p className="mt-3 text-sm text-ink-500">Active users</p>
+          <HardDrive className="h-5 w-5 text-ink-400" />
+          <p className="mt-3 text-sm text-ink-500">Storage used</p>
           <p className="mt-1 text-xl font-semibold tracking-[-0.03em] text-ink-950">
-            {overviewData.summary.activeUsers}
+            {formatBytes(overviewData.summary.storageUsedBytes)}
+          </p>
+          <p className="mt-2 text-xs text-ink-400">
+            {overviewData.summary.storedFiles} files
           </p>
         </article>
         <article className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur">
@@ -52,6 +58,9 @@ export default async function AdminPage() {
           <p className="mt-3 text-sm text-ink-500">Active links</p>
           <p className="mt-1 text-xl font-semibold tracking-[-0.03em] text-ink-950">
             {overviewData.summary.activeLinks}
+          </p>
+          <p className="mt-2 text-xs text-ink-400">
+            {overviewData.summary.inactiveLinks} inactive • {overviewData.summary.totalLinks} total
           </p>
         </article>
       </section>
@@ -61,9 +70,9 @@ export default async function AdminPage() {
           Users
         </h2>
 
-        <div className="mt-5 overflow-x-auto">
-          <div className="min-w-[44rem]">
-            <div className="grid grid-cols-[1fr_1fr_7rem_6rem_8rem] gap-4 px-4 pb-2 text-xs uppercase tracking-[0.18em] text-ink-500">
+        <div className="mt-5 hidden overflow-x-auto xl:block">
+          <div className="min-w-[60rem]">
+            <div className="grid grid-cols-[minmax(10rem,1fr)_minmax(14rem,1.2fr)_11rem_11rem_7rem] gap-4 px-4 pb-2 text-xs uppercase tracking-[0.18em] text-ink-500">
               <span>Name</span>
               <span>Email</span>
               <span>Role</span>
@@ -75,7 +84,7 @@ export default async function AdminPage() {
               {overviewData.userRows.map((user) => (
                 <div
                   key={user.id}
-                  className="grid grid-cols-[1fr_1fr_7rem_6rem_8rem] items-center gap-4 rounded-[1.25rem] border border-ink-200/60 bg-white/70 px-4 py-3"
+                  className="grid grid-cols-[minmax(10rem,1fr)_minmax(14rem,1.2fr)_11rem_11rem_7rem] items-center gap-4 rounded-[1.25rem] border border-ink-200/60 bg-white/70 px-4 py-3"
                 >
                   <p className="truncate font-medium text-ink-950">
                     {user.name}
@@ -91,7 +100,7 @@ export default async function AdminPage() {
                     <select
                       name="role"
                       defaultValue={user.role ?? "member"}
-                      className="rounded-xl border border-ink-200 bg-white px-2 py-1.5 text-xs text-ink-900"
+                      className="min-w-0 flex-1 rounded-xl border border-ink-200 bg-white px-2 py-1.5 text-xs text-ink-900"
                     >
                       <option value="member">Member</option>
                       <option value="admin">Admin</option>
@@ -99,7 +108,7 @@ export default async function AdminPage() {
                     </select>
                     <ActionSubmitButton
                       pendingLabel="Saving..."
-                      className="rounded-full border border-ink-300 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-ink-600 transition hover:border-ink-500 hover:bg-white"
+                      className="shrink-0 rounded-full border border-ink-300 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-ink-600 transition hover:border-ink-500 hover:bg-white"
                     >
                       Save
                     </ActionSubmitButton>
@@ -114,14 +123,14 @@ export default async function AdminPage() {
                     <select
                       name="isActive"
                       defaultValue={user.isActive === false ? "false" : "true"}
-                      className="rounded-xl border border-ink-200 bg-white px-2 py-1.5 text-xs text-ink-900"
+                      className="min-w-0 flex-1 rounded-xl border border-ink-200 bg-white px-2 py-1.5 text-xs text-ink-900"
                     >
                       <option value="true">Active</option>
                       <option value="false">Disabled</option>
                     </select>
                     <ActionSubmitButton
                       pendingLabel="Saving..."
-                      className="rounded-full border border-ink-300 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-ink-600 transition hover:border-ink-500 hover:bg-white"
+                      className="shrink-0 rounded-full border border-ink-300 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-ink-600 transition hover:border-ink-500 hover:bg-white"
                     >
                       Save
                     </ActionSubmitButton>
@@ -134,6 +143,74 @@ export default async function AdminPage() {
               ))}
             </div>
           </div>
+        </div>
+
+        <div className="mt-5 space-y-3 xl:hidden">
+          {overviewData.userRows.map((user) => (
+            <article
+              key={user.id}
+              className="rounded-[1.5rem] border border-ink-200/60 bg-white/70 p-4"
+            >
+              <div className="flex flex-col gap-1">
+                <p className="font-medium text-ink-950">{user.name}</p>
+                <p className="text-sm text-ink-600">{user.email}</p>
+                <p className="text-xs text-ink-400">Joined {formatDate(user.createdAt)}</p>
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <ActionForm
+                  action={updateUserRoleAction}
+                  pendingLabel="Saving role"
+                  className="space-y-2"
+                >
+                  <input type="hidden" name="userId" value={user.id} />
+                  <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Role</p>
+                  <div className="flex gap-2">
+                    <select
+                      name="role"
+                      defaultValue={user.role ?? "member"}
+                      className="min-w-0 flex-1 rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900"
+                    >
+                      <option value="member">Member</option>
+                      <option value="admin">Admin</option>
+                      <option value="super_admin">Super admin</option>
+                    </select>
+                    <ActionSubmitButton
+                      pendingLabel="Saving..."
+                      className="shrink-0 rounded-full border border-ink-300 px-3 py-2 text-xs font-medium uppercase tracking-wider text-ink-600 transition hover:border-ink-500 hover:bg-white"
+                    >
+                      Save
+                    </ActionSubmitButton>
+                  </div>
+                </ActionForm>
+
+                <ActionForm
+                  action={updateUserStatusAction}
+                  pendingLabel="Saving status"
+                  className="space-y-2"
+                >
+                  <input type="hidden" name="userId" value={user.id} />
+                  <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Status</p>
+                  <div className="flex gap-2">
+                    <select
+                      name="isActive"
+                      defaultValue={user.isActive === false ? "false" : "true"}
+                      className="min-w-0 flex-1 rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900"
+                    >
+                      <option value="true">Active</option>
+                      <option value="false">Disabled</option>
+                    </select>
+                    <ActionSubmitButton
+                      pendingLabel="Saving..."
+                      className="shrink-0 rounded-full border border-ink-300 px-3 py-2 text-xs font-medium uppercase tracking-wider text-ink-600 transition hover:border-ink-500 hover:bg-white"
+                    >
+                      Save
+                    </ActionSubmitButton>
+                  </div>
+                </ActionForm>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
 

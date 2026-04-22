@@ -16,7 +16,7 @@ export const APP_SETTINGS_KEYS = [
 export type AppSettingsKey = (typeof APP_SETTINGS_KEYS)[number];
 
 export const appSettingsSchema = z.object({
-  maxUploadSizeBytes: z.coerce.number().int().positive().max(5 * 1024 * 1024 * 1024),
+  maxUploadSizeBytes: z.coerce.number().int().positive().max(50 * 1024 * 1024 * 1024),
   defaultSoftDeleteRetentionDays: z.coerce.number().int().min(1).max(365),
   blockedFileExtensions: z.array(z.string().min(1).max(20)).max(128),
   defaultShareExpiryDays: z.coerce.number().int().min(1).max(90),

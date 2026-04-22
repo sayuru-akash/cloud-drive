@@ -12,14 +12,17 @@ import {
   updateFolderVisibilityAction,
   bulkDeleteFilesAction,
   bulkMoveFilesAction,
+  createFolderAction,
 } from "@/app/(workspace)/files/actions";
 import { useSelection } from "./selection-hooks";
 import { FilesToolbar } from "./files-toolbar";
-import { FilesSidebar, type PendingUpload } from "./files-sidebar";
 import { FilesContent } from "./files-content";
 import { BulkActionBar } from "./bulk-action-bar";
 import { MoveDialog } from "./move-dialog";
 import { ShareDialog } from "./share-dialog";
+import { NewFolderDialog } from "./new-folder-dialog";
+import { UploadQueue } from "@/components/upload-queue";
+import { useUploadQueue } from "@/hooks/use-upload-queue";
 import type { FileAction } from "./file-actions-menu";
 
 type FolderItem = {
@@ -49,7 +52,6 @@ export function FilesShell({
   files,
   availableFileTypes,
   folderTree,
-  pendingUploads,
   params,
 }: {
   userId: string;
@@ -60,7 +62,6 @@ export function FilesShell({
   files: FileItem[];
   availableFileTypes: string[];
   folderTree: FolderNode[];
-  pendingUploads: PendingUpload[];
   params: {
     q?: string;
     type?: string;
@@ -73,6 +74,18 @@ export function FilesShell({
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [moveOpen, setMoveOpen] = useState(false);
   const [shareFileId, setShareFileId] = useState<string | null>(null);
+  const [newFolderOpen, setNewFolderOpen] = useState(false);
+  const [newFolderKey, setNewFolderKey] = useState(0);
+
+  const {
+    uploads,
+    fileInputRef,
+    queueFiles,
+    cancelUpload,
+    retryUpload,
+    clearDone,
+    hasUploads,
+  } = useUploadQueue(folderId);
 
   const items = useMemo(
     () => [
@@ -208,10 +221,53 @@ export function FilesShell({
     }
   }
 
+  async function handleCreateFolder(name: string, visibility: string) {
+    try {
+      const formData = new FormData();
+      formData.append("name", name);
+      if (folderId) formData.append("parentFolderId", folderId);
+      formData.append("visibility", visibility);
+      await createFolderAction(formData);
+      setNewFolderOpen(false);
+      router.refresh();
+    } catch (e) {
+      console.error("Create folder failed:", e);
+    }
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      queueFiles(e.dataTransfer.files);
+    }
+  }
+
   const totalItems = folders.length + files.length;
 
   return (
-    <main className="space-y-6">
+    <main
+      className="space-y-6"
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* Hidden file input for uploads */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={(event) => {
+          if (event.target.files) {
+            queueFiles(event.target.files);
+          }
+          event.currentTarget.value = "";
+        }}
+      />
+
       <FilesToolbar
         breadcrumbs={breadcrumbs}
         folderId={folderId}
@@ -223,28 +279,27 @@ export function FilesShell({
         selectAll={selection.selectAll}
         clearAll={selection.clearAll}
         selectedCount={selection.selectedCount}
+        onNewFolder={() => {
+          setNewFolderKey((k) => k + 1);
+          setNewFolderOpen(true);
+        }}
+        onUpload={() => fileInputRef.current?.click()}
       />
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-        <FilesSidebar
-          folderId={folderId}
-          pendingUploads={pendingUploads}
+      <div className="min-w-0">
+        <FilesContent
+          folders={folders}
+          files={files}
+          viewMode={viewMode}
+          query={params.q}
+          isSelected={selection.isSelected}
+          onToggleSelect={selection.toggle}
+          renamingId={renamingId}
+          onRename={handleRename}
+          onCancelRename={() => setRenamingId(null)}
+          onAction={handleItemAction}
+          canManage={canManage}
         />
-        <div className="min-w-0 flex-1">
-          <FilesContent
-            folders={folders}
-            files={files}
-            viewMode={viewMode}
-            query={params.q}
-            isSelected={selection.isSelected}
-            onToggleSelect={selection.toggle}
-            renamingId={renamingId}
-            onRename={handleRename}
-            onCancelRename={() => setRenamingId(null)}
-            onAction={handleItemAction}
-            canManage={canManage}
-          />
-        </div>
       </div>
 
       {selection.selectedCount > 0 && (
@@ -274,6 +329,22 @@ export function FilesShell({
         open={!!shareFileId}
         onClose={() => setShareFileId(null)}
       />
+
+      <NewFolderDialog
+        key={newFolderKey}
+        open={newFolderOpen}
+        onClose={() => setNewFolderOpen(false)}
+        onConfirm={handleCreateFolder}
+      />
+
+      {hasUploads && (
+        <UploadQueue
+          uploads={uploads}
+          onCancel={cancelUpload}
+          onRetry={retryUpload}
+          onClearDone={clearDone}
+        />
+      )}
     </main>
   );
 }

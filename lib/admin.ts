@@ -5,15 +5,14 @@ import {
   count,
   desc,
   eq,
-  gt,
   ilike,
   isNotNull,
-  isNull,
   or,
+  sql,
 } from "drizzle-orm";
 import { getAppSettings } from "@/lib/app-settings";
 import { db } from "@/lib/db/client";
-import { auditLogs, shareLinks, users } from "@/lib/db/schema";
+import { auditLogs, files, shareLinks, users } from "@/lib/db/schema";
 
 export const AUDIT_PAGE_SIZE = 25;
 
@@ -51,7 +50,8 @@ function buildAuditWhere(filters: Pick<AdminAuditFilters, "q" | "action" | "reso
 }
 
 export async function getAdminOverviewData() {
-  const [userRows, settings, activeLinksRow] = await Promise.all([
+  const now = new Date();
+  const [userRows, settings, shareSummaryRow, storageSummaryRow] = await Promise.all([
     db
       .select({
         id: users.id,
@@ -65,24 +65,41 @@ export async function getAdminOverviewData() {
       .orderBy(users.createdAt),
     getAppSettings(),
     db
-      .select({ value: count() })
+      .select({
+        total: count(),
+        active: sql<number>`coalesce(sum(case when ${shareLinks.isRevoked} = false and (${shareLinks.expiresAt} is null or ${shareLinks.expiresAt} > ${now}) then 1 else 0 end), 0)`,
+      })
       .from(shareLinks)
-      .where(
-        and(
-          eq(shareLinks.isRevoked, false),
-          or(isNull(shareLinks.expiresAt), gt(shareLinks.expiresAt, new Date())),
-        ),
-      )
+      .then((rows) => rows[0]),
+    db
+      .select({
+        files: count(),
+        bytes: sql<number>`coalesce(sum(${files.sizeBytes}), 0)`,
+      })
+      .from(files)
+      .where(and(eq(files.isDeleted, false), eq(files.status, "ready")))
       .then((rows) => rows[0]),
   ]);
+
+  const totalUsers = userRows.length;
+  const disabledUsers = userRows.filter((user) => user.isActive === false).length;
+  const activeLinks = Number(shareSummaryRow?.active ?? 0);
+  const totalLinks = Number(shareSummaryRow?.total ?? 0);
+  const inactiveLinks = Math.max(totalLinks - activeLinks, 0);
+  const storageUsedBytes = Number(storageSummaryRow?.bytes ?? 0);
+  const storedFiles = Number(storageSummaryRow?.files ?? 0);
 
   return {
     userRows,
     settings,
     summary: {
-      totalUsers: userRows.length,
-      activeUsers: userRows.filter((user) => user.isActive !== false).length,
-      activeLinks: activeLinksRow?.value ?? 0,
+      totalUsers,
+      disabledUsers,
+      activeLinks,
+      inactiveLinks,
+      totalLinks,
+      storageUsedBytes,
+      storedFiles,
     },
   };
 }

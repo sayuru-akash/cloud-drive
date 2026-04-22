@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { and, desc, eq } from "drizzle-orm";
+import { z } from "zod";
 import { logAuditEvent } from "@/lib/audit";
 import { requireSession } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
@@ -7,14 +8,31 @@ import { fileVersions, files, uploads } from "@/lib/db/schema";
 import { canEditResource, getFileRecord } from "@/lib/drive";
 import { env } from "@/lib/env";
 import { createId } from "@/lib/ids";
-import { getStoredObject } from "@/lib/storage";
+import { completeMultipartUpload, getStoredObject } from "@/lib/storage";
+
+const completeUploadSchema = z
+  .object({
+    uploadStrategy: z.enum(["single", "multipart"]).optional(),
+    multipartUploadId: z.string().min(1).optional(),
+    parts: z
+      .array(
+        z.object({
+          partNumber: z.number().int().positive(),
+          etag: z.string().min(1),
+        }),
+      )
+      .min(1)
+      .optional(),
+  })
+  .optional();
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await requireSession();
   const { id } = await params;
+  const body = completeUploadSchema.parse(await request.json().catch(() => undefined));
 
   const file = await getFileRecord(id);
   if (!file) {
@@ -43,6 +61,30 @@ export async function POST(
       { error: "No pending upload found for this file." },
       { status: 400 },
     );
+  }
+
+  if (body?.uploadStrategy === "multipart") {
+    const multipartUploadId = body.multipartUploadId ?? upload.providerUploadId;
+
+    if (!multipartUploadId || !body.parts?.length) {
+      return NextResponse.json(
+        { error: "Multipart upload is missing completion data." },
+        { status: 400 },
+      );
+    }
+
+    try {
+      await completeMultipartUpload({
+        storageKey: upload.storageKey,
+        uploadId: multipartUploadId,
+        parts: body.parts,
+      });
+    } catch {
+      return NextResponse.json(
+        { error: "Multipart upload could not be finalized." },
+        { status: 400 },
+      );
+    }
   }
 
   let object;
@@ -117,6 +159,7 @@ export async function POST(
       versionId,
       sizeBytes,
       mimeType,
+      uploadStrategy: body?.uploadStrategy ?? "single",
     },
   });
 

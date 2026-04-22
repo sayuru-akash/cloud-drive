@@ -23,7 +23,7 @@ const serverEnvSchema = z.object({
   B2_BUCKET_NAME: z.string().min(6, "B2_BUCKET_NAME must be at least 6 characters"),
   RESEND_API_KEY: z.string().min(1).optional(),
   RESEND_FROM_EMAIL: z.string().min(1).optional(),
-  MAX_UPLOAD_SIZE_BYTES: z.coerce.number().int().positive().default(262144000),
+  MAX_UPLOAD_SIZE_BYTES: z.coerce.number().int().positive().default(10737418240),
   DEFAULT_SOFT_DELETE_RETENTION_DAYS: z.coerce.number().int().positive().default(30),
   INTERNAL_EMAIL_DOMAIN: z.string().min(1).optional(),
   VERCEL_URL: z.string().url().optional(),

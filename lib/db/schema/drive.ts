@@ -145,6 +145,7 @@ export const uploads = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     uploadStatus: uploadStatusEnum("upload_status").default("initiated").notNull(),
     storageKey: text("storage_key").notNull(),
+    providerUploadId: text("provider_upload_id"),
     contentType: text("content_type").notNull(),
     sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
     expiresAt: timestamp("expires_at").notNull(),

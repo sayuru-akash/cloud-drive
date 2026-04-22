@@ -1,17 +1,26 @@
 import { and, desc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { logAuditEvent } from "@/lib/audit";
 import { requireSession } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
 import { files, uploads } from "@/lib/db/schema";
 import { canEditResource, getFileRecord } from "@/lib/drive";
+import { abortMultipartUpload } from "@/lib/storage";
+
+const cancelUploadSchema = z
+  .object({
+    multipartUploadId: z.string().min(1).optional(),
+  })
+  .optional();
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await requireSession();
   const { id } = await params;
+  const body = cancelUploadSchema.parse(await request.json().catch(() => undefined));
   const file = await getFileRecord(id);
 
   if (!file) {
@@ -37,6 +46,15 @@ export async function POST(
 
   if (!upload) {
     return NextResponse.json({ ok: true });
+  }
+
+  const multipartUploadId = body?.multipartUploadId ?? upload.providerUploadId;
+
+  if (multipartUploadId) {
+    await abortMultipartUpload({
+      storageKey: upload.storageKey,
+      uploadId: multipartUploadId,
+    }).catch(() => undefined);
   }
 
   await db
@@ -65,6 +83,7 @@ export async function POST(
     resourceId: file.id,
     metadataJson: {
       uploadId: upload.id,
+      uploadStrategy: multipartUploadId ? "multipart" : "single",
     },
   });
 

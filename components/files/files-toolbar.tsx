@@ -1,13 +1,18 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ChevronRight,
+  ChevronDown,
   Home,
   LayoutGrid,
   LayoutList,
+  Plus,
   Search,
+  FolderPlus,
+  Upload,
 } from "lucide-react";
 
 export function FilesToolbar({
@@ -21,6 +26,8 @@ export function FilesToolbar({
   selectAll,
   clearAll,
   selectedCount,
+  onNewFolder,
+  onUpload,
 }: {
   breadcrumbs: Array<{ id: string; name: string }>;
   folderId: string | null;
@@ -37,6 +44,8 @@ export function FilesToolbar({
   selectAll: () => void;
   clearAll: () => void;
   selectedCount: number;
+  onNewFolder: () => void;
+  onUpload: () => void;
 }) {
   const router = useRouter();
 
@@ -60,7 +69,7 @@ export function FilesToolbar({
 
   return (
     <div className="space-y-4">
-      {/* Breadcrumbs + title */}
+      {/* Breadcrumbs + title + New button */}
       <section className="rounded-[2rem] border border-ink-200/80 bg-white/80 p-6 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur md:p-8">
         <nav className="flex flex-wrap items-center gap-2 text-sm text-ink-600">
           <Link
@@ -82,16 +91,21 @@ export function FilesToolbar({
             </span>
           ))}
         </nav>
-        <h1 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-ink-950 sm:text-4xl">
-          {breadcrumbs.length > 0
-            ? breadcrumbs[breadcrumbs.length - 1].name
-            : "All files"}
-        </h1>
-        <p className="mt-2 text-lg leading-8 text-ink-700">
-          {totalItems === 0
-            ? "This folder is empty."
-            : `${totalItems} item${totalItems === 1 ? "" : "s"}`}
-        </p>
+        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-[-0.05em] text-ink-950 sm:text-4xl">
+              {breadcrumbs.length > 0
+                ? breadcrumbs[breadcrumbs.length - 1].name
+                : "All files"}
+            </h1>
+            <p className="mt-2 text-lg leading-8 text-ink-700">
+              {totalItems === 0
+                ? "This folder is empty."
+                : `${totalItems} item${totalItems === 1 ? "" : "s"}`}
+            </p>
+          </div>
+          <NewDropdown onNewFolder={onNewFolder} onUpload={onUpload} />
+        </div>
       </section>
 
       {/* Search + filters */}
@@ -190,6 +204,70 @@ export function FilesToolbar({
           </div>
         </form>
       </section>
+    </div>
+  );
+}
+
+function NewDropdown({
+  onNewFolder,
+  onUpload,
+}: {
+  onNewFolder: () => void;
+  onUpload: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) {
+      document.addEventListener("mousedown", handleClick);
+    }
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-2 rounded-full bg-emerald-700 px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-800"
+      >
+        <Plus className="h-4 w-4" />
+        New
+        <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full z-30 mt-2 w-52 overflow-hidden rounded-2xl border border-ink-200/80 bg-white shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)]">
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onNewFolder();
+            }}
+            className="flex w-full items-center gap-3 px-4 py-3 text-sm text-ink-800 transition hover:bg-surface-strong"
+          >
+            <FolderPlus className="h-4 w-4 text-emerald-600" />
+            New folder
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onUpload();
+            }}
+            className="flex w-full items-center gap-3 px-4 py-3 text-sm text-ink-800 transition hover:bg-surface-strong"
+          >
+            <Upload className="h-4 w-4 text-emerald-600" />
+            Upload files
+          </button>
+        </div>
+      )}
     </div>
   );
 }
