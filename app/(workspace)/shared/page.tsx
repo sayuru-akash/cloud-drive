@@ -9,6 +9,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { revokeShareLinkAction } from "@/app/(workspace)/files/actions";
+import { ActionForm, ConfirmSubmitButton } from "@/components/action-ui";
 import { requireSession } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
 import { files, shareLinks } from "@/lib/db/schema";
@@ -159,19 +160,22 @@ export default async function SharedPage() {
 
                   <div className="flex items-center justify-end gap-2">
                     {status === "active" && (
-                      <form action={revokeShareLinkAction}>
+                      <ActionForm action={revokeShareLinkAction} pendingLabel="Revoking link">
                         <input
                           type="hidden"
                           name="shareId"
                           value={row.id}
                         />
-                        <button
-                          type="submit"
+                        <ConfirmSubmitButton
+                          title="Revoke link?"
+                          description="People using this link will lose access immediately."
+                          confirmLabel="Revoke link"
+                          pendingLabel="Revoking..."
                           className="rounded-full border border-ink-300 px-4 py-1.5 text-xs font-medium text-ink-700 transition hover:border-red-300 hover:bg-red-50 hover:text-red-700"
                         >
                           Revoke
-                        </button>
-                      </form>
+                        </ConfirmSubmitButton>
+                      </ActionForm>
                     )}
                   </div>
                 </div>

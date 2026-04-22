@@ -4,6 +4,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Activity,
   FolderKanban,
   LayoutDashboard,
   Link2,
@@ -19,18 +20,24 @@ const items: ReadonlyArray<{
   href: Route;
   label: string;
   icon: typeof LayoutDashboard;
+  adminOnly?: boolean;
+  indented?: boolean;
 }> = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/files", label: "Files", icon: FolderKanban },
   { href: "/shared", label: "Shared", icon: Link2 },
   { href: "/deleted", label: "Trash", icon: Trash2 },
   { href: "/settings", label: "Settings", icon: Settings2 },
-  { href: "/admin", label: "Admin", icon: Shield },
+  { href: "/admin", label: "Admin", icon: Shield, adminOnly: true },
+  { href: "/audit", label: "Audit", icon: Activity, adminOnly: true, indented: true },
 ];
 
 export function WorkspaceNav() {
   const pathname = usePathname();
   const { data: session } = authClient.useSession();
+  const canManageAdmin =
+    session?.user?.role === "admin" || session?.user?.role === "super_admin";
+  const visibleItems = items.filter((item) => !item.adminOnly || canManageAdmin);
 
   return (
     <>
@@ -40,7 +47,7 @@ export function WorkspaceNav() {
           <BrandMark variant="minimal" />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {items.map(({ href, label, icon: Icon }) => {
+          {visibleItems.map(({ href, label, icon: Icon, indented }) => {
             const active = pathname === href;
 
             return (
@@ -51,7 +58,7 @@ export function WorkspaceNav() {
                   active
                     ? "bg-ink-950 text-white"
                     : "border border-ink-200 bg-white text-ink-700"
-                }`}
+                } ${indented ? "ml-2" : ""}`}
               >
                 <Icon
                   className={`h-4 w-4 ${active ? "text-emerald-300" : "text-emerald-700"}`}
@@ -67,7 +74,7 @@ export function WorkspaceNav() {
       <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] w-72 shrink-0 flex-col rounded-[2rem] border border-ink-200/80 bg-white/78 p-5 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.52)] backdrop-blur lg:flex">
         <BrandMark variant="minimal" />
         <div className="mt-10 space-y-1">
-          {items.map(({ href, label, icon: Icon }) => {
+          {visibleItems.map(({ href, label, icon: Icon, indented }) => {
             const active = pathname === href;
 
             return (
@@ -78,7 +85,7 @@ export function WorkspaceNav() {
                   active
                     ? "bg-ink-950 text-white"
                     : "text-ink-700 hover:bg-ink-950/5 hover:text-ink-950"
-                }`}
+                } ${indented ? "ml-5" : ""}`}
               >
                 <span className="flex items-center gap-3">
                   <Icon

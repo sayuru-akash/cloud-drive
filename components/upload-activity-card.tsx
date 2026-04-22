@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Clock3, Upload } from "lucide-react";
 import { cancelPendingUploadAction } from "@/app/(workspace)/files/actions";
+import { ActionForm, ConfirmSubmitButton } from "@/components/action-ui";
 import { FileIcon } from "@/components/file-icon";
 import { formatBytes, formatDate, formatDateTime } from "@/lib/format";
 
@@ -101,15 +102,18 @@ export function UploadActivityCard({
                   >
                     Open
                   </a>
-                  <form action={cancelPendingUploadAction}>
+                  <ActionForm action={cancelPendingUploadAction} pendingLabel="Cancelling upload">
                     <input type="hidden" name="fileId" value={upload.fileId} />
-                    <button
-                      type="submit"
+                    <ConfirmSubmitButton
+                      title="Cancel upload?"
+                      description="This pending upload will be removed."
+                      confirmLabel="Cancel upload"
+                      pendingLabel="Cancelling..."
                       className="rounded-full border border-ink-300 px-4 py-2 text-xs font-medium text-ink-700 transition hover:border-red-300 hover:bg-red-50 hover:text-red-700"
                     >
                       Cancel
-                    </button>
-                  </form>
+                    </ConfirmSubmitButton>
+                  </ActionForm>
                 </div>
               </div>
             </article>

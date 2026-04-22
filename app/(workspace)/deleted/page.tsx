@@ -8,6 +8,11 @@ import {
   hardDeleteResourceAction,
   restoreResourceAction,
 } from "@/app/(workspace)/files/actions";
+import {
+  ActionForm,
+  ActionSubmitButton,
+  ConfirmSubmitButton,
+} from "@/components/action-ui";
 import { requireSession } from "@/lib/auth/session";
 import { getAppSettings } from "@/lib/app-settings";
 import { getDeletedResources } from "@/lib/drive";
@@ -86,7 +91,7 @@ export default async function DeletedPage() {
                 </span>
 
                 <div className="flex items-center justify-end gap-2">
-                  <form action={restoreResourceAction}>
+                  <ActionForm action={restoreResourceAction} pendingLabel="Restoring item">
                     <input
                       type="hidden"
                       name="resourceType"
@@ -97,17 +102,17 @@ export default async function DeletedPage() {
                       name="resourceId"
                       value={item.id}
                     />
-                    <button
-                      type="submit"
+                    <ActionSubmitButton
+                      pendingLabel="Restoring..."
                       className="inline-flex items-center gap-1.5 rounded-full border border-ink-300 px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-800"
                     >
                       <RotateCcw className="h-3.5 w-3.5" />
                       Restore
-                    </button>
-                  </form>
+                    </ActionSubmitButton>
+                  </ActionForm>
 
                   {canHardDelete && (
-                    <form action={hardDeleteResourceAction}>
+                    <ActionForm action={hardDeleteResourceAction} pendingLabel="Deleting item">
                       <input
                         type="hidden"
                         name="resourceType"
@@ -118,14 +123,17 @@ export default async function DeletedPage() {
                         name="resourceId"
                         value={item.id}
                       />
-                      <button
-                        type="submit"
+                      <ConfirmSubmitButton
+                        title="Delete forever?"
+                        description="This cannot be undone."
+                        confirmLabel="Delete forever"
+                        pendingLabel="Deleting..."
                         className="inline-flex items-center gap-1.5 rounded-full border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-50"
                       >
                         <AlertTriangle className="h-3.5 w-3.5" />
                         Delete
-                      </button>
-                    </form>
+                      </ConfirmSubmitButton>
+                    </ActionForm>
                   )}
                 </div>
               </div>

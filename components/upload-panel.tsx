@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
+import { useActionConfirm } from "@/components/action-ui";
 
 type UploadPanelProps = {
   folderId: string | null;
@@ -26,6 +27,7 @@ type UploadState = {
 
 export function UploadPanel({ folderId }: UploadPanelProps) {
   const router = useRouter();
+  const confirm = useActionConfirm();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const xhrRef = useRef<Record<string, XMLHttpRequest | undefined>>({});
   const [uploads, setUploads] = useState<UploadState[]>([]);
@@ -159,6 +161,17 @@ export function UploadPanel({ folderId }: UploadPanelProps) {
   }
 
   async function cancelUpload(upload: UploadState) {
+    const accepted = await confirm({
+      title: "Cancel upload?",
+      description: "This upload will stop and the pending item will be removed.",
+      confirmLabel: "Cancel upload",
+      tone: "danger",
+    });
+
+    if (!accepted) {
+      return;
+    }
+
     xhrRef.current[upload.id]?.abort();
 
     if (upload.fileId) {

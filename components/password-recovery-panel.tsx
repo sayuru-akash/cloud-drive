@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { usePendingAction } from "@/components/action-ui";
 import { authClient } from "@/lib/auth-client";
 
 export function PasswordRecoveryPanel({
@@ -17,8 +18,10 @@ export function PasswordRecoveryPanel({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(error ?? null);
+  const [pendingLabel, setPendingLabel] = useState("Working");
   const [isPending, startTransition] = useTransition();
   const isResetMode = Boolean(token);
+  usePendingAction(isPending, pendingLabel);
 
   function handleRequestReset() {
     setLocalError(null);
@@ -32,6 +35,7 @@ export function PasswordRecoveryPanel({
     }
 
     startTransition(async () => {
+      setPendingLabel("Sending reset email");
       const redirectTo = `${window.location.origin}/reset-password`;
       const response = await fetch("/api/password-reset/request", {
         method: "POST",
@@ -80,6 +84,7 @@ export function PasswordRecoveryPanel({
     }
 
     startTransition(async () => {
+      setPendingLabel("Resetting password");
       const result = await authClient.resetPassword({
         token,
         newPassword: password,

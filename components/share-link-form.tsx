@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { Link2 } from "lucide-react";
 import { createShareLinkAction } from "@/app/(workspace)/files/actions";
+import { ActionForm, ActionSubmitButton } from "@/components/action-ui";
 
 type ShareLinkFormProps = {
   fileId: string;
@@ -11,14 +12,15 @@ type ShareLinkFormProps = {
 const initialState: { error?: string; success?: boolean; url?: string; notice?: string } = {};
 
 export function ShareLinkForm({ fileId }: ShareLinkFormProps) {
-  const [state, formAction, isPending] = useActionState(
+  const [state, formAction] = useActionState(
     createShareLinkAction,
     initialState,
   );
 
   return (
-    <form
+    <ActionForm
       action={formAction}
+      pendingLabel="Creating link"
       className="flex flex-col gap-3 rounded-[1.25rem] border border-ink-200 bg-white p-4"
     >
       <input type="hidden" name="fileId" value={fileId} />
@@ -43,14 +45,13 @@ export function ShareLinkForm({ fileId }: ShareLinkFormProps) {
           />
           <span className="text-sm text-ink-600">days</span>
         </div>
-        <button
-          type="submit"
-          disabled={isPending}
+        <ActionSubmitButton
+          pendingLabel="Creating..."
           className="inline-flex items-center justify-center gap-2 rounded-full border border-emerald-700/20 bg-emerald-700/8 px-4 py-3 text-sm font-medium text-emerald-800 transition hover:bg-emerald-700/15 disabled:opacity-60"
         >
           <Link2 className="h-4 w-4" />
-          {isPending ? "Creating..." : "Create link"}
-        </button>
+          Create link
+        </ActionSubmitButton>
       </div>
 
       <input
@@ -90,6 +91,6 @@ export function ShareLinkForm({ fileId }: ShareLinkFormProps) {
           ) : null}
         </div>
       ) : null}
-    </form>
+    </ActionForm>
   );
 }

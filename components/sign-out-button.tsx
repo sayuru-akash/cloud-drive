@@ -2,11 +2,13 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { usePendingAction } from "@/components/action-ui";
 import { authClient } from "@/lib/auth-client";
 
 export function SignOutButton() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  usePendingAction(isPending, "Signing out");
 
   return (
     <button

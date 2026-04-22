@@ -3,6 +3,7 @@
 import type { FormEvent } from "react";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { usePendingAction } from "@/components/action-ui";
 import { authClient } from "@/lib/auth-client";
 
 type Mode = "sign-in" | "sign-up";
@@ -11,7 +12,9 @@ export function AuthPanel() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("sign-in");
   const [error, setError] = useState<string | null>(null);
+  const [pendingLabel, setPendingLabel] = useState("Signing in");
   const [isPending, startTransition] = useTransition();
+  usePendingAction(isPending, pendingLabel);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -23,6 +26,7 @@ export function AuthPanel() {
     const password = String(formData.get("password") ?? "");
 
     startTransition(async () => {
+      setPendingLabel(mode === "sign-up" ? "Creating account" : "Signing in");
       const result =
         mode === "sign-up"
           ? await authClient.signUp.email({

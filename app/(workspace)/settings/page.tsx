@@ -11,6 +11,7 @@ import {
   User,
 } from "lucide-react";
 import { sendVerificationEmailAction } from "@/app/(workspace)/settings/actions";
+import { ActionForm, ActionSubmitButton } from "@/components/action-ui";
 import { requireSession } from "@/lib/auth/session";
 import { getAppSettings } from "@/lib/app-settings";
 import { formatBytes } from "@/lib/format";
@@ -216,18 +217,19 @@ export default async function SettingsPage({
                   : "Your email is not verified. Verify it to secure your account."}
               </p>
               {!session.user.emailVerified && (
-                <form
+                <ActionForm
                   action={sendVerificationEmailAction}
+                  pendingLabel="Sending verification email"
                   className="mt-3"
                 >
-                  <button
-                    type="submit"
+                  <ActionSubmitButton
+                    pendingLabel="Sending..."
                     className="inline-flex items-center gap-2 rounded-full bg-ink-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-ink-800"
                   >
                     <Send className="h-3.5 w-3.5" />
                     Resend verification email
-                  </button>
-                </form>
+                  </ActionSubmitButton>
+                </ActionForm>
               )}
             </div>
           </div>

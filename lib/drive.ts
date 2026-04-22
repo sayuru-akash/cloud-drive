@@ -289,6 +289,54 @@ export async function getAccessibleFolderOptions({
   return items.sort((left, right) => left.path.localeCompare(right.path));
 }
 
+export type FolderNode = {
+  id: string;
+  name: string;
+  children: FolderNode[];
+};
+
+export async function getFolderTree(
+  userId: string,
+  userRole?: string | null,
+): Promise<FolderNode[]> {
+  const rows = await db
+    .select({
+      id: folders.id,
+      name: folders.name,
+      ownerUserId: folders.ownerUserId,
+      visibility: folders.visibility,
+      parentFolderId: folders.parentFolderId,
+    })
+    .from(folders)
+    .where(eq(folders.isDeleted, false));
+
+  const accessible = rows.filter((row) =>
+    canViewResource({
+      userId,
+      userRole,
+      ownerUserId: row.ownerUserId,
+      visibility: row.visibility,
+    }),
+  );
+
+  const map = new Map<string, FolderNode>();
+  for (const row of accessible) {
+    map.set(row.id, { id: row.id, name: row.name, children: [] });
+  }
+
+  const roots: FolderNode[] = [];
+  for (const row of accessible) {
+    const node = map.get(row.id)!;
+    if (row.parentFolderId && map.has(row.parentFolderId)) {
+      map.get(row.parentFolderId)!.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+
+  return roots.sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export async function getFolderContents({
   folderId,
   userId,

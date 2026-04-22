@@ -615,6 +615,212 @@ export async function softDeleteFolderAction(formData: FormData) {
   revalidateWorkspace();
 }
 
+export async function bulkDeleteFilesAction(formData: FormData) {
+  const session = await requireSession();
+  const fileIds = formData.getAll("fileId") as string[];
+  const folderIds = formData.getAll("folderId") as string[];
+
+  let deletedFiles = 0;
+  let deletedFolders = 0;
+
+  for (const fileId of fileIds) {
+    const file = await getFileRecord(fileId);
+    if (!file || file.isDeleted) continue;
+    if (
+      !canDeleteResource({
+        userId: session.user.id,
+        userRole: session.user.role,
+        ownerUserId: file.ownerUserId,
+      })
+    ) {
+      continue;
+    }
+
+    await db
+      .update(files)
+      .set({
+        status: "deleted",
+        isDeleted: true,
+        deletedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(files.id, fileId));
+
+    await logAuditEvent({
+      actorUserId: session.user.id,
+      actorEmail: session.user.email,
+      actionType: "file.deleted",
+      resourceType: "file",
+      resourceId: fileId,
+    });
+    deletedFiles++;
+  }
+
+  for (const folderId of folderIds) {
+    const folder = await getManagedFolder(folderId);
+    if (!folder || folder.isDeleted) continue;
+    if (
+      !canDeleteResource({
+        userId: session.user.id,
+        userRole: session.user.role,
+        ownerUserId: folder.ownerUserId,
+      })
+    ) {
+      continue;
+    }
+
+    const descendantFolderIds = await collectDescendantFolderIds(folderId);
+
+    await db
+      .update(folders)
+      .set({
+        isDeleted: true,
+        deletedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(inArray(folders.id, descendantFolderIds));
+
+    await db
+      .update(files)
+      .set({
+        status: "deleted",
+        isDeleted: true,
+        deletedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(inArray(files.folderId, descendantFolderIds));
+
+    await logAuditEvent({
+      actorUserId: session.user.id,
+      actorEmail: session.user.email,
+      actionType: "folder.deleted",
+      resourceType: "folder",
+      resourceId: folderId,
+      metadataJson: {
+        descendantCount: descendantFolderIds.length,
+      },
+    });
+    deletedFolders++;
+  }
+
+  if (deletedFiles > 0 || deletedFolders > 0) {
+    revalidateWorkspace();
+  }
+
+  return { deletedFiles, deletedFolders };
+}
+
+export async function bulkMoveFilesAction(formData: FormData) {
+  const session = await requireSession();
+  const fileIds = formData.getAll("fileId") as string[];
+  const folderIds = formData.getAll("folderId") as string[];
+  const targetFolderId = String(formData.get("targetFolderId") ?? "").trim() || null;
+
+  let movedFiles = 0;
+  let movedFolders = 0;
+
+  if (targetFolderId) {
+    const targetFolder = await getManagedFolder(targetFolderId);
+    if (!targetFolder || targetFolder.isDeleted) {
+      return { movedFiles, movedFolders };
+    }
+    if (
+      !canEditResource({
+        userId: session.user.id,
+        userRole: session.user.role,
+        ownerUserId: targetFolder.ownerUserId,
+      })
+    ) {
+      return { movedFiles, movedFolders };
+    }
+  }
+
+  for (const fileId of fileIds) {
+    const file = await getFileRecord(fileId);
+    if (!file || file.isDeleted) continue;
+    if (
+      !canEditResource({
+        userId: session.user.id,
+        userRole: session.user.role,
+        ownerUserId: file.ownerUserId,
+      })
+    ) {
+      continue;
+    }
+
+    const resolvedName = await ensureUniqueFileName(targetFolderId, file.displayName, file.id);
+
+    await db
+      .update(files)
+      .set({
+        folderId: targetFolderId,
+        displayName: resolvedName,
+        updatedAt: new Date(),
+      })
+      .where(eq(files.id, file.id));
+
+    await logAuditEvent({
+      actorUserId: session.user.id,
+      actorEmail: session.user.email,
+      actionType: "file.moved",
+      resourceType: "file",
+      resourceId: file.id,
+      metadataJson: {
+        targetFolderId,
+        displayName: resolvedName,
+      },
+    });
+    movedFiles++;
+  }
+
+  for (const folderId of folderIds) {
+    const folder = await getManagedFolder(folderId);
+    if (!folder || folder.isDeleted) continue;
+    if (
+      !canEditResource({
+        userId: session.user.id,
+        userRole: session.user.role,
+        ownerUserId: folder.ownerUserId,
+      })
+    ) {
+      continue;
+    }
+
+    if (targetFolderId) {
+      const descendantIds = await collectDescendantFolderIds(folderId);
+      if (descendantIds.includes(targetFolderId)) {
+        continue;
+      }
+    }
+
+    await db
+      .update(folders)
+      .set({
+        parentFolderId: targetFolderId,
+        updatedAt: new Date(),
+      })
+      .where(eq(folders.id, folder.id));
+
+    await logAuditEvent({
+      actorUserId: session.user.id,
+      actorEmail: session.user.email,
+      actionType: "folder.moved",
+      resourceType: "folder",
+      resourceId: folder.id,
+      metadataJson: {
+        targetFolderId,
+      },
+    });
+    movedFolders++;
+  }
+
+  if (movedFiles > 0 || movedFolders > 0) {
+    revalidateWorkspace();
+  }
+
+  return { movedFiles, movedFolders };
+}
+
 export async function restoreResourceAction(formData: FormData) {
   const session = await requireSession();
   const resourceType = String(formData.get("resourceType") ?? "");

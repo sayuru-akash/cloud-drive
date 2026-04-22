@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Manrope } from "next/font/google";
+import { ActionUiProvider } from "@/components/action-ui";
 import "./globals.css";
 import { siteConfig } from "@/lib/site";
 
@@ -67,7 +68,9 @@ export default function RootLayout({
       className={`${sans.variable} ${mono.variable}`}
       data-scroll-behavior="smooth"
     >
-      <body>{children}</body>
+      <body>
+        <ActionUiProvider>{children}</ActionUiProvider>
+      </body>
     </html>
   );
 }
