@@ -223,17 +223,13 @@ export function FilesShell({
   }
 
   async function handleCreateFolder(name: string, visibility: string) {
-    try {
-      const formData = new FormData();
-      formData.append("name", name);
-      if (folderId) formData.append("parentFolderId", folderId);
-      formData.append("visibility", visibility);
-      await createFolderAction(formData);
-      setNewFolderOpen(false);
-      router.refresh();
-    } catch (e) {
-      console.error("Create folder failed:", e);
-    }
+    const formData = new FormData();
+    formData.append("name", name);
+    if (folderId) formData.append("parentFolderId", folderId);
+    formData.append("visibility", visibility);
+    await createFolderAction(formData);
+    setNewFolderOpen(false);
+    router.refresh();
   }
 
   function handleDragOver(e: React.DragEvent) {

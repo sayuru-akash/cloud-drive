@@ -10,7 +10,7 @@ export function NewFolderDialog({
 }: {
   open: boolean;
   onClose: () => void;
-  onConfirm: (name: string, visibility: string) => void;
+  onConfirm: (name: string, visibility: string) => Promise<void>;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
@@ -32,7 +32,11 @@ export function NewFolderDialog({
     const trimmed = name.trim();
     if (!trimmed) return;
     setIsPending(true);
-    onConfirm(trimmed, visibility);
+    try {
+      await onConfirm(trimmed, visibility);
+    } finally {
+      setIsPending(false);
+    }
   }
 
   if (!open) return null;

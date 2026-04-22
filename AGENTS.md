@@ -96,7 +96,23 @@ npx drizzle-kit migrate
 
 ## Testing Strategy
 
-> TODO: No test suite is configured yet. Consider adding Vitest for unit tests, Playwright for e2e, and a CI workflow via GitHub Actions.
+> No test suite is currently configured. The `.playwright-cli/` directory contains only runtime logs from an external CLI tool, not actual Playwright tests. There are no `.spec.ts`, `.test.ts`, or `.test.tsx` files in the project source.
+
+### Verification Steps Performed Manually
+
+After non-trivial changes, run the following checks before considering the task complete:
+
+1. `npx tsc --noEmit` — TypeScript strict-mode type check
+2. `npm run build` — Production build with Turbopack
+3. `npm run lint` — ESLint across the entire project
+4. `npx eslint <path>` — Targeted lint on newly created or edited files
+
+### Recommended Test Coverage (Not Yet Implemented)
+
+- **Unit tests** (Vitest): `lib/storage.ts` (B2 disposition sanitization, multipart math), `lib/drive.ts` (permission helpers), `lib/env.ts` (Zod schema validation)
+- **Component tests** (Vitest + React Testing Library): `FilesContent` selection logic, `useUploadQueue` state transitions, `NewFolderDialog` form validation
+- **E2E tests** (Playwright): file upload flow (single + multipart), folder creation, share link generation, drag-and-drop, refresh during upload, soft-delete recovery
+- **CI workflow** (GitHub Actions): run typecheck, lint, build, and `npm audit` on every PR
 
 ## Security & Compliance
 
@@ -105,7 +121,7 @@ npx drizzle-kit migrate
 - **Upload limits**: `MAX_UPLOAD_SIZE_BYTES` (default 10 GB); blocked extensions checked in `initiate-upload`
 - **Share links**: Token-based with expiry (default 7 days), optional password, optional email notification
 - **Audit logging**: All file/folder CRUD, share create/revoke, and permission changes are logged
-- **Dependency scanning**: > TODO: Add `npm audit` to CI
+- **Dependency scanning**: Run `npm audit` regularly; add to CI when a GitHub Actions workflow is created
 
 ## Agent Guardrails
 
