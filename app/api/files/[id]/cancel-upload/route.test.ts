@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "./route";
+import type { DriveFileRecord } from "@/lib/drive";
 
 const mockSession = {
   user: { id: "user-1", email: "test@example.com", role: "member" },
@@ -7,9 +8,19 @@ const mockSession = {
 
 const mockFile = {
   id: "file-1",
+  folderId: null,
   ownerUserId: "user-1",
+  createdByUserId: "user-1",
+  displayName: "test.pdf",
+  originalName: "test.pdf",
+  mimeType: "application/pdf",
+  sizeBytes: 1024,
+  status: "pending",
   visibility: "private",
-};
+  isDeleted: false,
+  deletedAt: null,
+  currentVersionId: null,
+} satisfies DriveFileRecord;
 
 const mockUpload = {
   id: "upload-1",

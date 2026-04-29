@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET } from "./route";
+import type { DriveFileRecord, DriveFileVersion } from "@/lib/drive";
 
 const mockSession = {
   user: { id: "user-1", email: "test@example.com", role: "member" },
@@ -7,18 +8,27 @@ const mockSession = {
 
 const mockFile = {
   id: "file-1",
+  folderId: null,
   ownerUserId: "user-1",
+  createdByUserId: "user-1",
+  displayName: "test.pdf",
+  originalName: "test.pdf",
+  mimeType: "application/pdf",
+  sizeBytes: 1024,
   visibility: "private",
   status: "ready",
   isDeleted: false,
-  displayName: "test.pdf",
-};
+  deletedAt: null,
+  currentVersionId: "ver-1",
+} satisfies DriveFileRecord;
 
 const mockVersion = {
   id: "ver-1",
-  fileId: "file-1",
   storageKey: "workspace/key",
-};
+  sizeBytes: 1024,
+  mimeType: "application/pdf",
+  createdAt: new Date("2026-01-01T00:00:00.000Z"),
+} satisfies DriveFileVersion;
 
 vi.mock("@/lib/auth/session", () => ({
   requireSession: vi.fn(() => Promise.resolve(mockSession)),

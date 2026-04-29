@@ -11,6 +11,30 @@ import {
 } from "@/lib/db/schema";
 import { ADMIN_ROLES, type FileSortValue, type ResourceVisibility } from "@/lib/constants";
 
+export type DriveFileRecord = {
+  id: string;
+  folderId: string | null;
+  ownerUserId: string;
+  createdByUserId: string;
+  displayName: string;
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+  status: "pending" | "ready" | "failed" | "deleted";
+  visibility: ResourceVisibility;
+  isDeleted: boolean;
+  deletedAt: Date | null;
+  currentVersionId: string | null;
+};
+
+export type DriveFileVersion = {
+  id: string;
+  storageKey: string;
+  sizeBytes: number;
+  mimeType: string;
+  createdAt: Date;
+};
+
 export function canManageAdmin(userRole?: string | null) {
   return ADMIN_ROLES.has(userRole ?? "");
 }
@@ -476,7 +500,7 @@ export async function getFolderContents({
   };
 }
 
-export async function getFileRecord(fileId: string) {
+export async function getFileRecord(fileId: string): Promise<DriveFileRecord | null> {
   const [file] = await db
     .select({
       id: files.id,
@@ -500,7 +524,7 @@ export async function getFileRecord(fileId: string) {
   return file ?? null;
 }
 
-export async function getCurrentFileVersion(fileId: string) {
+export async function getCurrentFileVersion(fileId: string): Promise<DriveFileVersion | null> {
   const [version] = await db
     .select({
       id: fileVersions.id,
