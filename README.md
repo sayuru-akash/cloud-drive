@@ -1,5 +1,10 @@
 # Cloud Drive
 
+> [!CAUTION]
+> **This Next.js drive version is deprecated.** Active development has moved to the new Laravel edition: **[sayuru-akash/cloud-drive-laravel](https://github.com/sayuru-akash/cloud-drive-laravel)**.
+>
+> The Laravel version is the recommended path forward because it is a standalone production app with a cleaner deployment boundary, Laravel + Vue + Inertia architecture, Backblaze B2-first storage, stronger operational documentation, polished UX, GPL licensing, and a codebase that is easier to package, host, and maintain independently. This repository remains available for historical reference and existing deployments, but new work should start from the Laravel version.
+
 An internal file workspace for teams. Cloud Drive provides folder hierarchies, direct browser uploads to Backblaze B2, download-only share links, soft delete with retention, admin controls, and a full audit trail.
 
 ## Features
@@ -17,15 +22,15 @@ An internal file workspace for teams. Cloud Drive provides folder hierarchies, d
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Framework | Next.js 16 (App Router, typed routes) |
-| UI | React 19, Tailwind CSS v4, Lucide React |
-| Auth | Better Auth v1.6.5 (session cookies, roles: `super_admin`, `admin`, `member`) |
-| Database | Neon PostgreSQL + Drizzle ORM |
-| Storage | Backblaze B2 (S3-compatible API) |
-| Email | Resend |
-| Testing | Vitest + jsdom + React Testing Library + Playwright |
+| Layer     | Technology                                                                    |
+| --------- | ----------------------------------------------------------------------------- |
+| Framework | Next.js 16 (App Router, typed routes)                                         |
+| UI        | React 19, Tailwind CSS v4, Lucide React                                       |
+| Auth      | Better Auth v1.6.5 (session cookies, roles: `super_admin`, `admin`, `member`) |
+| Database  | Neon PostgreSQL + Drizzle ORM                                                 |
+| Storage   | Backblaze B2 (S3-compatible API)                                              |
+| Email     | Resend                                                                        |
+| Testing   | Vitest + jsdom + React Testing Library + Playwright                           |
 
 ## Architecture
 
@@ -139,28 +144,28 @@ Copy `.env.example` to `.env.local` and fill in all required values.
 
 ### Required
 
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | PostgreSQL connection string. Example: `postgresql://user:pass@host/db?sslmode=require` |
-| `BETTER_AUTH_SECRET` | Random secret for auth sessions. **Must be at least 32 characters.** |
-| `B2_S3_ENDPOINT` | Backblaze B2 S3 endpoint. Example: `https://s3.us-west-001.backblazeb2.com` |
-| `B2_KEY_ID` | B2 application key ID |
-| `B2_APPLICATION_KEY` | B2 application key secret |
-| `B2_BUCKET_NAME` | Private B2 bucket name (min 6 characters) |
-| `APP_BASE_URL` | Canonical app origin. Example: `https://drive.yourcompany.com` |
+| Variable             | Description                                                                             |
+| -------------------- | --------------------------------------------------------------------------------------- |
+| `DATABASE_URL`       | PostgreSQL connection string. Example: `postgresql://user:pass@host/db?sslmode=require` |
+| `BETTER_AUTH_SECRET` | Random secret for auth sessions. **Must be at least 32 characters.**                    |
+| `B2_S3_ENDPOINT`     | Backblaze B2 S3 endpoint. Example: `https://s3.us-west-001.backblazeb2.com`             |
+| `B2_KEY_ID`          | B2 application key ID                                                                   |
+| `B2_APPLICATION_KEY` | B2 application key secret                                                               |
+| `B2_BUCKET_NAME`     | Private B2 bucket name (min 6 characters)                                               |
+| `APP_BASE_URL`       | Canonical app origin. Example: `https://drive.yourcompany.com`                          |
 
 ### Optional
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NEXT_PUBLIC_APP_URL` | Public app URL exposed to client. Falls back to `APP_BASE_URL` | — |
-| `RESEND_API_KEY` | Resend API key for password reset and share notifications | — |
-| `RESEND_FROM_EMAIL` | Verified sender address. Example: `Cloud Drive <noreply@email.yourcompany.com>` | — |
-| `INTERNAL_EMAIL_DOMAIN` | Restrict signups to this email domain. Example: `yourcompany.com` | — |
-| `MAX_UPLOAD_SIZE_BYTES` | Maximum upload size in bytes | `10737418240` (10 GB) |
-| `DEFAULT_SOFT_DELETE_RETENTION_DAYS` | Days to retain soft-deleted files | `30` |
-| `VERCEL_PROJECT_PRODUCTION_URL` | Provided by Vercel; used as `APP_BASE_URL` fallback | — |
-| `VERCEL_URL` | Provided by Vercel; used as `APP_BASE_URL` fallback | — |
+| Variable                             | Description                                                                     | Default               |
+| ------------------------------------ | ------------------------------------------------------------------------------- | --------------------- |
+| `NEXT_PUBLIC_APP_URL`                | Public app URL exposed to client. Falls back to `APP_BASE_URL`                  | —                     |
+| `RESEND_API_KEY`                     | Resend API key for password reset and share notifications                       | —                     |
+| `RESEND_FROM_EMAIL`                  | Verified sender address. Example: `Cloud Drive <noreply@email.yourcompany.com>` | —                     |
+| `INTERNAL_EMAIL_DOMAIN`              | Restrict signups to this email domain. Example: `yourcompany.com`               | —                     |
+| `MAX_UPLOAD_SIZE_BYTES`              | Maximum upload size in bytes                                                    | `10737418240` (10 GB) |
+| `DEFAULT_SOFT_DELETE_RETENTION_DAYS` | Days to retain soft-deleted files                                               | `30`                  |
+| `VERCEL_PROJECT_PRODUCTION_URL`      | Provided by Vercel; used as `APP_BASE_URL` fallback                             | —                     |
+| `VERCEL_URL`                         | Provided by Vercel; used as `APP_BASE_URL` fallback                             | —                     |
 
 ### Backblaze B2 Configuration
 
@@ -253,6 +258,7 @@ npm run test -- --coverage
 Stack: Vitest + jsdom + React Testing Library + MSW.
 
 Test files live next to the code they test:
+
 - `lib/*.test.ts` — utility and logic tests
 - `hooks/*.test.ts` — hook tests
 - `components/**/*.test.tsx` — component tests
@@ -292,6 +298,7 @@ Stack: Playwright (Chromium). Tests are in `e2e/`.
 ### Health Check
 
 The app exposes a readiness endpoint at `/api/health` that reports the status of:
+
 - Database connectivity
 - Auth configuration
 - Storage configuration
@@ -312,11 +319,11 @@ The app exposes a readiness endpoint at `/api/health` that reports the status of
 
 ## Roles & Permissions
 
-| Role | Capabilities |
-|------|-------------|
-| `member` | Manage own files/folders, create shares, view workspace-visible resources |
-| `admin` | Everything `member` can do, plus view all resources and access admin dashboard |
-| `super_admin` | Everything `admin` can do, plus hard-delete and manage app settings |
+| Role          | Capabilities                                                                   |
+| ------------- | ------------------------------------------------------------------------------ |
+| `member`      | Manage own files/folders, create shares, view workspace-visible resources      |
+| `admin`       | Everything `member` can do, plus view all resources and access admin dashboard |
+| `super_admin` | Everything `admin` can do, plus hard-delete and manage app settings            |
 
 Permission helpers (`canViewResource`, `canEditResource`, `canDeleteResource`, `canShareResource`) check ownership + role at every mutation boundary.
 
